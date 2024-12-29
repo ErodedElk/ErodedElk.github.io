@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>散列Hash | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>散列Hash</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-02-11T12:12:36.000Z" id="date"> 2021-02-11</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.998Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>注：学习过程参照《数据结构与算法分析——C语言描述》，虽然我个人是用C++实现，但代码大致上与书中一致。如果您发现了某些错误，欢迎指正。</p>
+<p>[toc]</p>
+<p>一种映射方式。给定一个关键字，将它映射到一张表上对应的单元格。这里展示一种Hash函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">unsigned int Hash(const char* key, int TableSize)<br>&#123;<br>unsigned int HashVal = 0;<br>while (*key != &#x27;\0&#x27;)<br>HashVal = (HashVal &lt;&lt; 5) + *key++;<br>return HashVal % TableSize;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>因为常见的关键字都是字符串，所以这样写。但在下面的笔记中，我将关键字规定为整型，以提高笔记的简明性，所以这里将会用另外一种Hash函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">unsigned int Hash(int key, int TableSize)<br>&#123;<br>unsigned int HashVal = 0;<br>HashVal = key % TableSize;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>按照流程，其实本该从建立哈希表开始，但很快就会遇到一些问题，所以我打算和在一起记录。不妨先假设我们已经建好了一张散列表。</p>
+<p>问题是非常显而易见的，既然是一种映射函数，那必然会出现碰撞(两个不同的关键字具有相同的散列值)。比如现在所用的这个函数，假设表尺寸TableSize是11，那么关键字“11”“110”就会有同样的散列值了。</p>
+<p>因为一个单元格只能储存一个关键字，那么就要对多出来的那一个做些处理了，下面将会详细说明三种方法(总共有四种)。</p>
+<h2 id="分离链接："><a href="#分离链接：" class="headerlink" title="分离链接："></a><strong>分离链接：</strong></h2><p>举一个比较形象的例子吧。</p>
+<p>    假设散列表是一个平面，他有X轴和Y轴，两个轴的坐标都必须是整数(整数只是为了好理解一些罢了)。</p>
+<p>    比方说（1，1）。现在有两个关键字都被映射到了这个点上，那如何解决？为它增加一个Z轴。</p>
+<p>    那么关键字便能够这样储存：（1，1，key1）和（1，1，key2）</p>
+<p>    就像是在这个点下面挂上了两个关键字一样。它没有缓解碰撞的出现，但是容许了碰撞的出现。因为即便hash值相同，关键字也同样能够被顺利储存下来。</p>
+<p>    在C++中，这种结构是实现方法便是链表。所谓的Z轴就相当于在每一个节点下面挂上一条链表。</p>
+<p>    必要的声明：（因为各种声明有些绕，所以加了些许方便理解的注释和一些没必要的名词。）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct Listnode;//表节点<br>typedef struct Listnode* Position;//指向表节点的“位置指针”<br>struct HashTbl;//哈希表<br>typedef struct HashTbl* HashTable;//指向哈希表的“表指针”<br>typedef Position List;//“位置指针”也将作为“列表指针” <br>struct Listnode &#123;<br>int info;//关键字<br>Position Next;//指向下一个表节点的“位置指针”<br>&#125;;<br>struct HashTbl &#123;<br>int TableSize;//表尺寸<br>List* TheLists;//指向“位置指针”的“列表指针”<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>建立表：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">HashTable InitializeTable(int TableSize)<br>&#123;<br>HashTable H;<br>H = new HashTbl;<br> //H-&gt;TableSize = NextPrime(TableSize);这个函数的作用是取比该值大的下一个素数，但这样简化了一下，所以才有下面的要求<br>H-&gt;TableSize = TableSize;//这要求Tablesize是大于表大小的素数<br>H-&gt;TheLists = new List[TableSize];<br> for (int i = 0; i &lt; TableSize; i++)<br>&#123;<br>H-&gt;TheLists[i] = new Listnode;<br>H-&gt;TheLists[i]-&gt;Next = NULL;<br>&#125;<br>return H;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>流程说明：</p>
+<p>    该函数将会返回一个“表指针”，这个指针指向我们刚刚建立的哈希表。</p>
+<p>    首先，新建一个表指针，并为其开辟一个哈希表空间。现在这个表指针H已经<strong>指向</strong>了刚开辟的空间。</p>
+<p>    将我们输入的“表尺寸”作为这张新表的尺寸，并根据这个尺寸，在表中开辟一个数组，这个数组的元素是“列表指针”。现在，新表中的列表指针TheLists<strong>成为</strong>了刚开辟好的数组的第一个元素——一个新的列表指针。注意，这个数组的大小会和设定好的“表尺寸一样大”。</p>
+<p>    接下来为每一个“表指针”开辟一个新节点，并将节点的Next指针指向NULL。</p>
+<p>    现在，TheLists中的每一个列表指针指向新节点。并且，节点中的关键字都还没有初始化。</p>
+<p>Find函数：该表将会返回找到的关键字的“位置指针”</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">Position Find(HashTable H,int Key)<br>&#123;<br>Position P;<br>List L;L = H-&gt;TheLists[Hash(Key, H-&gt;TableSize)];<br>P = L-&gt;Next;<br>while (P != NULL &amp;&amp; P-&gt;info != Key)//strcmp  strcpy<br>P = P-&gt;Next;<br>return P;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>流程说明：</p>
+<p>    新建一个“位置指针”P和“列表指针”L</p>
+<p>    让“列表指针”<strong>临时成为</strong>关键字本该出现的那一列。（我总觉得这种说辞有些不太简洁。）</p>
+<p>    Hash（Key，H-&gt;TableSize）其实就是将关键字进行映射，假设结果被映射到了5，那么“列表指针”将临时成为数组中的第六个。</p>
+<p>    “位置指针”<strong>临时成为</strong>L-&gt;Next</p>
+<p>    之所以是临时，目的是不改变哈希表本来的结构，所以引入临时变量来操作数据。</p>
+<p>    接下来开始遍历这一列上的每一个节点，直到找到了相同的关键字或者已经枚举尽了。</p>
+<p>    注：因为关键字不一定都是整数，像是字符串之类的关键字，则必须用strcmp和strcpy这样的函数来比较。</p>
+<p>插入函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void Insert(int Key,HashTable H)<br>&#123;<br>Position tmpPos, Newcell;<br>List L;<br> tmpPos = Find(H, Key);<br>if (tmpPos == NULL)<br>&#123;<br>Newcell = new Listnode;<br>L = H-&gt;TheLists[Hash(Key, H-&gt;TableSize)];<br>Newcell-&gt;Next = L-&gt;Next;<br>Newcell-&gt;info = Key;<br>L-&gt;Next = Newcell;<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>流程说明：</p>
+<p>    输入关键字和哈希表地址。</p>
+<p>    首先，新建一个“临时位置指针”tmpPos和Newcell，以及一个“列表指针”L。</p>
+<p>    查找这张表中是否已经存在这个关键字了，如果存在就直接跳过，否则才进行添加。</p>
+<p>    假设本不存在这个关键字。</p>
+<p>    为Newcell新建一个节点。</p>
+<p>    让L指针临时成为指向相应坐标的位置指针。</p>
+<p>    那么现在L将指向某个节点，比方说TheLists[5]。</p>
+<p>    令Newcell节点中的Next指针成为L指针指向的节点的Next指针。</p>
+<p>    关键字赋予。</p>
+<p>    将L指向的节点中Next指针指向这个新节点。</p>
+<p>    （这个新节点将被挂在最靠近“轴”的那一侧。）</p>
+<p>最后是删除函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void Deletenode(int Key, HashTable H)<br>&#123;<br>Position tmpPos,tmpP2;<br>List L;tmpPos = Find(H,Key);<br>L = H-&gt;TheLists[Hash(Key, H-&gt;TableSize)];<br>if (tmpPos != NULL&amp;&amp;L-&gt;info!=Key)<br>&#123;<br>tmpP2 = tmpPos-&gt;Next;<br>while(L-&gt;Next!=NULL)<br>&#123;<br>if (L-&gt;Next-&gt;info == Key)<br>&#123;<br>L-&gt;Next = tmpP2;<br>delete tmpPos;<br>&#125;<br>else<br>L = L-&gt;Next;<br>&#125;<br>&#125;<br>else if (L-&gt;info = Key)<br>&#123;<br>int K;<br>L-&gt;info = K;<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>书上并没有给出删除数据的函数，所以这个函数是我自己现写的，不太确定是否完全正确。</p>
+<p>但思路很简单，就是找到关键字那一排，然后把节点删掉，然后再把链表重新拼起来。如果关键字存在头节点，那就只替换掉关键字就行。</p>
+<p>（所以最好是不要往头节点放东西，将表制成头节点不包含数据的样式最佳。就连书上也是这样推荐的）</p>
+<h2 id="开放定址："><a href="#开放定址：" class="headerlink" title="开放定址："></a><strong>开放定址：</strong></h2><p>    先贴出完全的代码，再进行逐步分析：(以下代码为平方探测)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">#include&lt;iostream&gt;<br>using namespace std;<br>//----------------------------//<br>struct HashTbl;<br>typedef struct HashTbl* HashTable;<br>struct HashEntry;<br>typedef unsigned int Index;<br>typedef Index Position;<br>typedef struct HashEntry Cell;<br>enum KindOfEntry &#123;Legitimate,Empty,Deleted&#125;;<br>#define MinTableSize 2<br>struct HashEntry<br>&#123;<br>int Key;<br>enum KindOfEntry Info;<br>&#125;;<br>struct HashTbl<br>&#123;<br>int TableSize;<br>Cell* TheCells;<br>&#125;;<br>Position Find(int key, HashTable H);<br>void Insert(int key, HashTable H);<br>HashTable InitializeTable(int TableSize);<br>Index Hash(const char* key, int TableSize);<br>//----------------------------//<br>HashTable InitializeTable(int TableSize)<br>&#123;<br>HashTable H;<br>if (TableSize &lt; MinTableSize)<br><br>return NULL;<br><br>else<br>&#123;<br>H = new HashTbl;<br>H-&gt;TableSize = TableSize;<br>H-&gt;TheCells = new HashEntry[H-&gt;TableSize];<br>for (int i = 0; i &lt; H-&gt;TableSize; i++)<br><br>H-&gt;TheCells[i].Info = Empty;<br>return H;<br>&#125;<br>&#125;<br><br>Position Find(int key, HashTable H)<br>&#123;<br>Position CurrentPos;<br>int CollisionNum;<br>CollisionNum = 0;<br>CurrentPos = Hash(key, H-&gt;TableSize);<br>while (H-&gt;TheCells[CurrentPos].Info != Empty &amp;&amp; H-&gt;TheCells[CurrentPos].Key != key)<br>&#123;<br>CollisionNum++;<br>CurrentPos += 2 * CollisionNum - 1;<br>if (CurrentPos &gt;= H-&gt;TableSize)<br>CurrentPos -= H-&gt;TableSize;<br>&#125;<br>return CurrentPos;<br>&#125;<br><br>void Insert(int key,HashTable H)<br>&#123;<br>Position Pos;<br>Pos = Find(key, H);<br>if (H-&gt;TheCells[Pos].Info != Legitimate)<br>&#123;<br>H-&gt;TheCells[Pos].Info = Legitimate;<br>H-&gt;TheCells[Pos].Key = key;<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    继上一篇链接法之后，这次遇到了开放寻址。原理也并不复杂。其实就是当发生了碰撞(不同的关键字却拥有一样的哈希值)时，为后到的关键字再找另外一个地方存放。当然，这个存放也不能是瞎存放，它是有一定规则的，常见的有两种，分别是“线性”和“平方”。</p>
+<p><strong>线性探测：</strong></p>
+<p>当发生碰撞的时候，就往下一个单元格去存放(如果还碰撞就继续往下，碰到底了就绕回表头继续往下)。是相对朴素的一种方法，只要表还没装满，那就一定能给关键字找到合适的位置。当然，这也同时很不效率，因为它必须一个个去匹配判断，一次次去绕，怎么想都不是很效率，所以还有另外一种“平方”。</p>
+<p><strong>平方探测：</strong></p>
+<p>    因为上一种不太效率，所以平方探测可能更平常一些。简单来说，当发送了碰撞，就去找当前单元格下的  i^2 格，以此类推（其中，i是一个从1开始的常数，每次判断都会+1。所以偏移量是按照1，4，9，16的顺序来增加的）。</p>
+<p>    注：还有另外一种平方探测，和上面的相近，只是变成了  (-1)^i(i)^2 而已，并且 <strong>常量i</strong> 是每两回合+1（-1，+1，-4，+4像这样）。</p>
+<p>    这种方式能很好的防止过多次数的匹配，因为插入数据的单元都很分散，但也同样有些毛病。比方说，必须要保证哈希表足够大。试想一下，这种匹配方式，是不是有可能导致某个数据来回匹配无数次都没办法放进空的单元格里？解决这种方式就需要让哈希表足够大。显然，这可能会浪费不少空间，但速度无疑提升了。</p>
+<p>&#x2F;&#x2F;——————————————-&#x2F;&#x2F;</p>
+<p>首先是创建表函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">HashTable InitializeTable(int TableSize)<br>&#123;<br>HashTable H;<br>if (TableSize &lt; MinTableSize)<br><br>return NULL;<br><br>else<br>&#123;<br>H = new HashTbl;<br>H-&gt;TableSize = TableSize;<br>H-&gt;TheCells = new HashEntry[H-&gt;TableSize];<br>for (int i = 0; i &lt; H-&gt;TableSize; i++)<br>H-&gt;TheCells[i].Info = Empty;<br>return H;<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    并不复杂，连代码都没几行。</p>
+<p>    首先，建立一个“表指针H”，然后根据输入的“表尺寸TableSize”建表。</p>
+<p>    ①先为H开辟一个“表空间”</p>
+<p>    ②尺寸赋予</p>
+<p>    ③为该空间中的“表单元指针”开辟出一个数组，以存放每个表单元的数据（我自己偶尔会绕进去，所以姑且打个注释吧。指针在定义的时候就存在了，而开辟指针空间实际上是为指针所指向的结构体开辟一块空间，这一操作只是让这些被声明好的指针有地方能指，而不是把指针放进去……（我自己也觉得这样特地去说好像有点蠢……））</p>
+<p>    ④将这个每个“表单元”初始化为Empty</p>
+<p>    ⑤返回这个表的地址</p>
+<p>    &#x2F;&#x2F;—————————————————–&#x2F;&#x2F;</p>
+<p>查找关键字函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">Position Find(int key, HashTable H)<br>&#123;<br>Position CurrentPos;<br>int CollisionNum;<br>CollisionNum = 0;<br>CurrentPos = Hash(key, H-&gt;TableSize);<br>while (H-&gt;TheCells[CurrentPos].Info != Empty &amp;&amp; H-&gt;TheCells[CurrentPos].Key != key)<br>&#123;<br>CollisionNum++;<br>CurrentPos += 2 * CollisionNum - 1;<br>if (CurrentPos &gt;= H-&gt;TableSize)<br>CurrentPos -= H-&gt;TableSize;<br>&#125;<br>return CurrentPos;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    很有意思的函数，我最初并没有看懂为什么CurrentPos是那样计算的，但从结论来说，作者说的对。</p>
+<p>    ①声明位置指针CurrentPos</p>
+<p>    ②定义碰撞次数CollisionNum&#x3D;0</p>
+<p>    ③得出其本该对应的哈希值</p>
+<p>    ④遍历表。如果“该单元状态非空，且关键字不相同”，碰撞次数增加，CurrentPos指针偏移一个 CollisionNum^2（并判断是否超出了表的范围，若超出就把它来回来）</p>
+<p>    最妙的就是偏移量计算了。它避免了一些看似需要的乘法和除法。书上还特别叮嘱，不要改变While的判断条件的先后顺序（这是很有必要，也很有趣的方法。当你发现该单元格内数据为Empty，则直接返回这个地址了，而不是返回NULL。这会为下一个Insert函数提供很多便利。并且，也是非常有必要的是，对于没有初始化的单元格内的Key，它无疑是有一个确确实实的值的，这样做能省下一点时间。）</p>
+<p> <strong>F(i)&#x3D;F(i-1)+2i-1</strong> 这是书中给出的算法，在计算机中并不难实现。</p>
+<p>    &#x2F;&#x2F;———————————————————–&#x2F;&#x2F;</p>
+<p>插入函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void Insert(int key,HashTable H)<br>&#123;<br>Position Pos;<br>Pos = Find(key, H);<br>if (H-&gt;TheCells[Pos].Info != Legitimate)<br>&#123;<br>H-&gt;TheCells[Pos].Info = Legitimate;<br>H-&gt;TheCells[Pos].Key = key;<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    ①声明，并找出该关键字对应的Pos位置</p>
+<p>    ②如果这个关键字已经存在了，就什么都不做；如果不存在，那就往里面放新的关键字。</p>
+<p>    不妨假设现在的表中是不存在Deleted状态的单元格。那么Find函数只会返回Legitimate或者Empty。</p>
+<p>    返回Legitimate状态的条件，只有一种：①单元格不为空，关键字相同。此时，Find函数会马上返回Legitimate</p>
+<p>    返回Empty状态的条件，也只有一种：①单元格为空，直接返回。</p>
+<p>    这样的说明分明是没必要的，但我写出来才理顺了。</p>
+<p>    删除函数并没有写，我觉得那没太大必要，就做些简单的说明吧。</p>
+<p>    本例中，“删除”操作并不是指把数据真的删除，只是把单元格状态标记为Deleted罢了。数据仍然会被保存。</p>
+<p>    如果真的想写，和上面的Insert差不多。直接用Find找出来，判断是否为Empty就行了。</p>
+<h2 id="双散列与再散列："><a href="#双散列与再散列：" class="headerlink" title="双散列与再散列："></a><strong>双散列与再散列：</strong></h2><p><strong>双散列：</strong></p>
+<p>    原理很朴素。既然第一个哈希值会发生冲突，那再来一个哈希值不就好了？</p>
+<p>    比如，现在有两个哈希函数，分别记作Hash1(X)与Hash2(X)，其中，X为关键字。</p>
+<p>    假如现在我们得到的第一个哈希值Hash1所对应的位置已经有先来的人了，位子已经被占了，那这个X肯定没办法放进去了；那么，便再计算这个X的Hash2，发现第二个位子还是空的，于是我们把Hash2放进去。这就是原理，但论谁都应该会有一些疑问，写在下面。</p>
+<p><strong>对双散列的思考：</strong></p>
+<p>    很明显，这种策略并不能从根本上解决问题，甚至也都没办法从基础上解决问题。因为表仍然是那一张，只不过每个关键字现在能够拥有两个哈希值了，但这对每一个关键字来说都是一样的。或许一个好的哈希函数能够在这种情况下尽可能的填补缺陷(比方说，第一个哈希函数算出来的值大多数占据了表的一半，而另外一个哈希函数则占据另外一半，那这种对半开的函数就非常棒了。当然，这只是一种愿望，实际中不一定真的存在这种巧合)，但情况仍然相对糟糕。</p>
+<p>    那比方说三散列呢？四散列？看起来好像都是可行的策略，但要设计出这种方案着实困难。对于哈希函数的设计既复杂也浪费，而且往往还不能得到期望的结果。</p>
+<p>    当然，实际情况其实也并没有那么糟糕。放到实际情况中去考量的话，这种策略预期的探测次数几乎和随机冲突解决方法的情形是相同的。</p>
+<p>    吸引人吗？是的，吸引人。但我也不是很懂就是了。</p>
+<p><strong>再散列：</strong></p>
+<p>    同样不难，比起下一个可扩散列来讲，这要随和的多了。</p>
+<p>    原理也很简单。当表不够大了，就把表扩大一倍不就行了（这个一倍也是有原因的，具体情况适当了解即可）？</p>
+<p><strong>代码：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">HashTable ReHash(HashTable H)<br>&#123;<br>int OldSize;<br>OldSize = H-&gt;TableSize;<br>Cell* OldCells;<br>OldCells = H-&gt;TheCells;<br>H = InitializeTable(2 * OldSize);<br>for (int i = 0; i &lt; OldSize; i++)<br>&#123;<br>if (OldCells[i].Info == Legitimate)<br>Insert(OldCells[i].Key, H);<br>&#125;<br>delete[] OldCells;<br>return H;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    很好理解的，书上给的代码相当易懂，就不解释了。</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/02/16/heap/">← Next 优先队列(堆)</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/02/08/wineepidemic/">红葡萄酒之疫 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E7%A6%BB%E9%93%BE%E6%8E%A5%EF%BC%9A"><span class="toc-number">1.</span> <span class="toc-text">分离链接：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E6%94%BE%E5%AE%9A%E5%9D%80%EF%BC%9A"><span class="toc-number">2.</span> <span class="toc-text">开放定址：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%8C%E6%95%A3%E5%88%97%E4%B8%8E%E5%86%8D%E6%95%A3%E5%88%97%EF%BC%9A"><span class="toc-number">3.</span> <span class="toc-text">双散列与再散列：</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

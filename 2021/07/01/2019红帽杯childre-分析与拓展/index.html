@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>2019红帽杯 - childRE 分析与拓展 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>2019红帽杯 - childRE 分析与拓展</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-07-01T13:22:21.000Z" id="date"> 2021-07-01</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.974Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>​</p>
+<p>        十分特殊也有趣的一题，特此记录。流程并非难以理解，但有些需要注意的点。</p>
+<p>        无壳，可以直接用IDA分析，但由于存在一些动态变量，一旦开始动调，代码将会变得更难理解，因此目前只用静态调试来审计</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">int __cdecl main(int argc, const char **argv, const char **envp)<br>&#123;<br>  __int64 v3; // rax<br>  __int64 v4; // rax<br>  const CHAR *v5; // r11<br>  __int64 v6; // r10<br>  int v7; // er9<br>  const CHAR *v8; // r10<br>  __int64 v9; // rcx<br>  __int64 v10; // rax<br>  int result; // eax<br>  unsigned int v12; // ecx<br>  __int64 v13; // r9<br>  __int128 v14[2]; // [rsp+20h] [rbp-38h] BYREF<br><br>  v14[0] = 0i64;<br>  v14[1] = 0i64;<br>  sub_140001080(&quot;%s&quot;);<br>  v3 = -1i64;<br>  do<br>    ++v3;<br>  while ( *((_BYTE *)v14 + v3) );<br>  if ( v3 != 31 )<br>  &#123;<br>    while ( 1 )<br>      Sleep(0x3E8u);<br>  &#125;<br>  v4 = sub_140001280(v14);<br>  v5 = name;<br>  if ( v4 )<br>  &#123;<br>    sub_1400015C0(*(_QWORD *)(v4 + 8));<br>    sub_1400015C0(*(_QWORD *)(v6 + 16));<br>    v7 = dword_1400057E0;<br>    v5[dword_1400057E0] = *v8;<br>    dword_1400057E0 = v7 + 1;<br>  &#125;<br>  UnDecorateSymbolName(v5, outputString, 0x100u, 0);<br>  v9 = -1i64;<br>  do<br>    ++v9;<br>  while ( outputString[v9] );<br>  if ( v9 == 62 )<br>  &#123;<br>    v12 = 0;<br>    v13 = 0i64;<br>    do<br>    &#123;<br>      if ( a1234567890Qwer[outputString[v13] % 23] != *(_BYTE *)(v13 + 0x140003478i64) )<br>        _exit(v12);<br>      if ( a1234567890Qwer[outputString[v13] / 23] != *(_BYTE *)(v13 + 0x140003438i64) )<br>        _exit(v12 * v12);<br>      ++v12;<br>      ++v13;<br>    &#125;<br>    while ( v12 &lt; 0x3E );<br>    sub_140001020(&quot;flag&#123;MD5(your input)&#125;\n&quot;);<br>    result = 0;<br>  &#125;<br>  else<br>  &#123;<br>    v10 = sub_1400018A0(std::cout);<br>    std::ostream::operator&lt;&lt;(v10, sub_140001A60);<br>    result = -1;<br>  &#125;<br>  return result;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/3bb926d3-696d-4767-93ea-c997038482f0'><img src="blob:https://tokameine.top/3bb926d3-696d-4767-93ea-c997038482f0"></p>
+<p>         第57行是明显的显示验证结果，则能够判明第56行的while为判断条件的遍历；IDA将 ‘!&#x3D;’ 后面的内容分析成地址而不是数组，但不妨碍提取数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">char fp[] = &#123;&quot;1234567890-=!@#$%^&amp;*()_+qwertyuiop[]QWERTYUIOP&#123;&#125;asdfghjkl;&#x27;ASDFGHJKL:\&quot;ZXCVBNM&lt;&gt; ? zxcvbnm, . /&quot;&#125;;//a1234567890Qwer<br>char tp[] = &quot;(_@4620!08!6_0*0442!@186%%0@3=66!!974*3234=&amp;0^3&amp;1@=&amp;0908!6_0*&amp;&quot;;//0000000140003478<br>char kp[] = &quot;55565653255552225565565555243466334653663544426565555525555222&quot;;//0000000140003438<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/dde67544-a359-420a-a3e1-b9029919a71a'><img src="blob:https://tokameine.top/dde67544-a359-420a-a3e1-b9029919a71a"></p>
+<p>        而outputString则是我们目前需要求取的数据，它只起到了索引的作用，逆算法不难写出：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">int main()<br>&#123;<br>char fp[] = &#123;&quot;1234567890-=!@#$%^&amp;*()_+qwertyuiop[]QWERTYUIOP&#123;&#125;asdfghjkl;&#x27;ASDFGHJKL:\&quot;ZXCVBNM&lt;&gt; ? zxcvbnm, . /&quot;&#125;;<br>char tp[] = &quot;(_@4620!08!6_0*0442!@186%%0@3=66!!974*3234=&amp;0^3&amp;1@=&amp;0908!6_0*&amp;&quot;;//0000000140003478<br>char kp[] = &quot;55565653255552225565565555243466334653663544426565555525555222&quot;;//0000000140003438<br>char output[64];<br>for (int i = 0; i &lt; 63; i++)<br>&#123;<br>output[i]=find(tp[i],kp[i],fp);<br>&#125;<br>cout &lt;&lt; output&lt;&lt;endl;<br>&#125;<br>char find(char p1,char p2,char *p3)<br>&#123;<br>int index = 0;<br>for (int i = 0; i &lt; 95; i++)<br>&#123;<br>if (p3[i] == p1)<br>&#123;<br>index = i;<br>break;<br>&#125;<br>&#125;<br>while (p3[index/23]!=p2)<br>&#123;<br>index += 23;<br>&#125;<br>return index;<br>&#125;<br>//private: char * __thiscall R0Pxx::My_Aut0_PWN(unsigned char *)t<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/6b551291-8098-41d4-b11d-1fab70a9939e'><img src="blob:https://tokameine.top/6b551291-8098-41d4-b11d-1fab70a9939e"></p>
+<p>        结果是一个函数声明的字符串，试着将它md5后提交，发现错误，那么就需要继续往上读</p>
+<p>        那么跟踪outputString是从哪里获得的，能够来到第38行UnDecorateSymbolName函数</p>
+<blockquote>
+<p><strong>UnDecorateSymbolName</strong>：<a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-undecoratesymbolname">https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-undecoratesymbolname</a></p>
+</blockquote>
+<p>        只靠阅读官方文档似乎不太足够，但第38行的大致意思是：完全取消对C++符号的修饰，也就是说，某个C++函数符号被取消修饰后，得到了</p>
+<blockquote>
+<p>“private: char * __thiscall R0Pxx::My_Aut0_PWN(unsigned char *)t” </p>
+</blockquote>
+<p>        这样一个函数声明符号 </p>
+<p>        查阅一些文档之后才知道，C++中的符号在编译之后都会被修饰为另外一种样子</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/yxysuanfa/p/6984895.html">https://www.cnblogs.com/yxysuanfa/p/6984895.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Scl_Diligent/article/details/83990429">https://blog.csdn.net/Scl_Diligent&#x2F;article&#x2F;details&#x2F;83990429</a></p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">int Max(int a, int b);//?Max@@YAHHH@Z<br>double Max(int a, int b);//?Max@@YANHH@Z<br>double Max1(int a, int b);//?Max1@@YANHH@Z<br>double Max1(int a, double b);//?Max1@@YANHN@Z<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/f02bc23a-7d73-423f-8f1f-59b73c7441cf'><img src="blob:https://tokameine.top/f02bc23a-7d73-423f-8f1f-59b73c7441cf"></p>
+<p>         我们通过上述代码定义的函数，在编译后都会形成如注释所示的那样的名称</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210701151511472.png'><img src="https://img-blog.csdnimg.cn/20210701151511472.png">​<img src="blob:https://tokameine.top/1adc28cd-5d80-4ece-89f8-f31e7c80ad5a"></p>
+<p>        实际操作也验证了我们的想法，那么我们的工作就应该是找到这个经过修饰的名称字符串</p>
+<p>         根据上面给出的两位大佬总结的编译器名称修饰规则，以及我们已经得出的未修饰名称，可以写出确定的字符串：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">?My_Aut0_PWN@R0Pxx@@AAEPADPAE@Z<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/228127dd-24e5-4f87-9820-7bd5e959d858'><img src="blob:https://tokameine.top/228127dd-24e5-4f87-9820-7bd5e959d858"></p>
+<p>        md5后提交发现还是不对，那就只能再往上读</p>
+<p>        第28行的函数有些复杂，可以暂时不看；第30~37中涉及了v5，这个v5应是我们输入的内容或是中间内容，也正是v5经过UnDecorateSymbolName变换得到了outputString</p>
+<p>        函数sub_1400015C0实际上是一个二叉树下序遍历</p>
+<p>        (我不确定是不是叫下序，总之就是自下往上的遍历方式)</p>
+<p>        如果不是因为最近正好遇到过类似的题目，可能我也没办法马上认出来，不过两层的递归查找其实也还算明显的；以及，就算不确定是否真是如此，也可以通过动态调试来确定是否为二叉树；并且，如果将其当作二叉树，sub_140001280函数便能够比较自然的想象为二叉树的生成</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210701153804709.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210701153804709.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/5f6b502f-253f-4a8d-b13a-8c658beacf53"></p>
+<p>         上图是我根据下序遍历的规则手绘出的二叉树，然后再用上序遍历把字符串拼出来得到了flag</p>
+<p>        (可恶，好久没写过字了，本就难看的字写的更加难看了……)</p>
+<p>        直接把这个flag输入进去，程序提示正确，我们的猜想也就被验证了</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210701154034468.png'><img src="https://img-blog.csdnimg.cn/20210701154034468.png">​<img src="blob:https://tokameine.top/9e42d4d0-f9ce-4fd4-8e63-4cbc7f17cb56"></p>
+<p>         当然，实际操作中我们根本需要这样繁琐的去验证是否为二叉树</p>
+<p>        大可以通过动调将输入值改为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">ABCDEFGHIJKLMNOPQ......<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/96174589-d933-4369-8eea-3ecca398eb7e'><img src="blob:https://tokameine.top/96174589-d933-4369-8eea-3ecca398eb7e"></p>
+<p>        等比较好确定的有序的值，然后通过修改PC(程序计数器)跳过第23行的 if 判断，这样就能用较短的数据量确定出实际结构了</p>
+<p>        但实际上，这为大佬也给出了另外一个比较简单的方法来算出置换后的结果：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.freesion.com/article/6515734088/">https://www.freesion.com/article/6515734088/</a></p>
+</blockquote>
+<p>         个人觉得这要比我手绘二叉树来得简单得多，供参考吧 ​</p>
+<p><strong>插画ID：90581839</strong></p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/07/12/chaconne/">← Next Chaconne</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/07/01/buuctfjocker/">BUUCTF - 网鼎杯 2020 青龙组 - jocker 分析与记录 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

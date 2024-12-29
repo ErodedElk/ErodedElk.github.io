@@ -1,0 +1,98 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>FS寄存器 和 段寄存器线索 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>FS寄存器 和 段寄存器线索</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-01-30T18:14:22.000Z" id="date"> 2022-01-31</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.991Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>问题始于一个简单的场景：“canary绕过”，一下子唤起我多年的问题，FS寄存器究竟是什么，在哪里？</p>
+<p>如下是段寄存器的结构示意图：</p>
+<p class='item-img' data-src='https://cdn.jsdelivr.net/gh/ErodedElk/blogPic/img/202201310126961.png'><img src="https://cdn.jsdelivr.net/gh/ErodedElk/blogPic/img/202201310126961.png"></p>
+<p>可以注意到，一个64位的段寄存器分为两个部分，Hidden Part部分包括了我们一般会用到的Base Address。常说的“用户<strong>无法访问</strong>FS寄存器”应该改为”用户<strong>无法直接访问</strong>FS寄存器”便不会引起误会了。</p>
+<p>来看看官方手册怎么说：</p>
+<blockquote>
+<p>Intel手册：</p>
+<p>In order to set up compatibility mode for an application, segment-load instructions (MOV to Sreg, POP Sreg) work<br>normally in 64-bit mode. An entry is read from the system descriptor table (GDT or LDT) and is loaded in the hidden<br>portion of the segment register. The descriptor-register base, limit, and attribute fields are all loaded. However, the<br>contents of the data and stack segment selector and the descriptor registers are ignored.  </p>
+<p>When FS and GS segment overrides are used in 64-bit mode, their respective base addresses are used in the linear<br>address calculation: (FS or GS).base + index + displacement. FS.base and GS.base are then expanded to the full<br>linear-address size supported by the implementation. The resulting effective address calculation can wrap across<br>positive and negative addresses; the resulting linear address must be canonical.  </p>
+<p>In 64-bit mode, memory accesses using FS-segment and GS-segment overrides are not checked for a runtime limit<br>nor subjected to attribute-checking. Normal segment loads (MOV to Sreg and POP Sreg) into FS and GS load a<br>standard 32-bit base value in the hidden portion of the segment register. The base address bits above the standard<br>32 bits are cleared to 0 to allow consistency for implementations that use less than 64 bits.</p>
+</blockquote>
+<blockquote>
+<p>AMD手册：</p>
+<p>FS and GS Registers in 64-Bit Mode. Unlike the CS, DS, ES, and SS segments, the FS and GS<br>segment overrides can be used in 64-bit mode. When FS and GS segment overrides are used in 64-bit<br>mode, their respective base addresses are used in the effective-address (EA) calculation. The complete<br>EA calculation then becomes (FS or GS).base + base + (scale ∗ index) + displacement. The FS.base<br>and GS.base values are also expanded to the full 64-bit virtual-address size, as shown in Figure 4-5.<br>Any overflow in the 64-bit linear address calculation is ignored and the resulting address instead wraps<br>around to the other end of the address space.  </p>
+<p>In 64-bit mode, FS-segment and GS-segment overrides are not checked for limit or attributes. Instead,<br>the processor checks that all virtual-address references are in canonical form.  </p>
+<p>Segment register-load instructions (MOV to Sreg and POP Sreg) load only a 32-bit base-address value<br>into the hidden portion of the FS and GS segment registers. The base-address bits above the low 32 bits<br>are cleared to 0 as a result of a segment-register load. When a null selector is loaded into FS or GS, the<br>contents of the corresponding hidden descriptor register are not altered.  </p>
+<p>There are two methods to update the contents of the FS.base and GS.base hidden descriptor fields. The<br>first is available exclusively to privileged software (CPL &#x3D; 0). The FS.base and GS.base hidden<br>descriptor-register fields are mapped to MSRs. Privileged software can load a 64-bit base address in<br>canonical form into FS.base or GS.base using a single WRMSR instruction. The FS.base MSR address<br>is C000_0100h while the GS.base MSR address is C000_0101h.  </p>
+<p>The second method of updating the FS and GS base fields is available to software running at any<br>privilege level (when supported by the implementation and enabled by setting CR4[FSGSBASE]).<br>The WRFSBASE and WRGSBASE instructions copy the contents of a GPR to the FS.base and<br>GS.base fields respectively. When the operand size is 32 bits, the upper doubleword of the base is<br>cleared. WRFSBASE and WRGSBASE are only supported in 64-bit mode</p>
+</blockquote>
+<p>二者均提到的WRFSBASE才是真正对FS进行操作的方式。内核代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">/*<br> * Set the selector to 0 for the same reason<br> * as %gs above.<br> */<br>if (task == current) &#123;<br>loadseg(FS, 0);<br>x86_fsbase_write_cpu(arg2);<br>/*<br> * On non-FSGSBASE systems, save_base_legacy() expects<br> * that we also fill in thread.fsbase.<br> */<br>task-&gt;thread.fsbase = arg2;<br>&#125; else &#123;<br>task-&gt;thread.fsindex = 0;<br>x86_fsbase_write_task(task, arg2);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>首先会把GDT或LDT的0号选择子加载到FS里。但根据AMD手册可知：</p>
+<blockquote>
+<p>“When a null selector is loaded into FS or GS, the contents of the corresponding hidden descriptor register are not altered.”</p>
+</blockquote>
+<p>FS的低位并不会做出改变，更加重要的是第二个函数x86_fsbase_write_cpu，实现如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">static inline void x86_fsbase_write_cpu(unsigned long fsbase)<br>&#123;<br>if (static_cpu_has(X86_FEATURE_FSGSBASE))<br>wrfsbase(fsbase);<br>else<br>wrmsrl(MSR_FS_BASE, fsbase);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>其调用wrfsbase来真正向FS中写入Base等数据。至于wrfsbase是什么，它不过只是一条指令罢了。此前的MSR还在使用FSGSBASE指令来写FS寄存器，但它不如wrfsbase来得效率，因此目前的新版本更多愿意选择wrfsbase。这些指令不同于mov、pop等外部修改指令，它们能够直接操作寄存器内部的值，不会把寄存器的内容外泄出来。</p>
+<p>另外，gdb是怎么拿到fsbase的？具体是方式是什么？来看pwndbg的源代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">PTRACE_ARCH_PRCTL = 30<br>ARCH_GET_FS = 0x1003<br>ARCH_GET_GS = 0x1004<br>    @property<br>    @pwndbg.memoize.reset_on_stop<br>    def fsbase(self):<br>        return self._fs_gs_helper(ARCH_GET_FS)<br></code></pre></td></tr></table></figure>
+
+<p>所以结论是，内核向用户提供了接口，用户是能够<strong>间接访问</strong>FS寄存器的，通过arch_prctl即可。</p>
+<p>综上所述，最后来回答一下开始的几个问题吧。</p>
+<p>问题一：</p>
+<ul>
+<li>FS寄存器里放些什么？</li>
+<li>答：放的是一个指针，它会指向一个TLS结构体(对于单线程，或许用TCB更加准确)</li>
+</ul>
+<p>问题二：</p>
+<ul>
+<li>FS究竟在哪？</li>
+<li>答：这是我最开始学习时产生的误解，我误以为FS并不实际存在，而是虚拟出的一个寄存器。但现在我们知道，FS是真真正正在硬件上存在的寄存器。</li>
+</ul>
+<p>问题三：</p>
+<ul>
+<li>究竟如何获取FS的内容？</li>
+<li>答：一般的，gdb里直接用fsbase指令就能获取了，或者手动使用call调用arch_prctl也不是不行，内核已经提供了获取fsbase的接口了。</li>
+</ul>
+<p>问题四：</p>
+<ul>
+<li>FS寄存器的结构是什么？</li>
+<li>上文的图片给出了。</li>
+</ul>
+<p>最后，我觉得有点意外也有些特殊的是，在64位模式下，CS、DS、ES、SS寄存器将被<strong>直接弃用</strong>。这显得有些怪异，毕竟一直以来我都觉得计算机设计得可谓是将冗余降到最低。现在突然多出了几个完全不被使用的寄存器，有点意外。</p>
+<p>另外再记录几项资料：</p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/28209582/why-are-the-data-segment-registers-always-null-in-gdb">https://stackoverflow.com/questions/28209582/why-are-the-data-segment-registers-always-null-in-gdb</a></p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/11497563/detail-about-msr-gs-base-in-linux-x86-64">https://stackoverflow.com/questions/11497563/detail-about-msr-gs-base-in-linux-x86-64</a></p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/23095665/using-gdb-to-read-msrs/59125003#59125003">https://stackoverflow.com/questions/23095665/using-gdb-to-read-msrs/59125003#59125003</a></p>
+<p><a target="_blank" rel="noopener" href="https://dere.press/2020/10/18/glibc-tls/">https://dere.press/2020/10/18/glibc-tls/</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/pwndbg/pwndbg/blob/89b2df582a323b98c04c5d35e3323ad291514f63/pwndbg/regs.py#L268">https://github.com/pwndbg/pwndbg/blob/89b2df582a323b98c04c5d35e3323ad291514f63/pwndbg/regs.py#L268</a></p>
+<p><a target="_blank" rel="noopener" href="https://lwn.net/Articles/821723/">A possible end to the FSGSBASE saga [LWN.net]</a></p>
+<p>插画ID：93763504</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/01/31/systemkernel-chapter7/">← Next 《操作系统真象还原》chapter7笔记与总结</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/01/13/systemkernel-chapter1-5/">《操作系统真象还原》chapter1-5笔记与总结 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

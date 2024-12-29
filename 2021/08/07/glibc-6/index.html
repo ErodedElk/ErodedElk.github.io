@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>关于如何理解Glibc堆管理器(Ⅵ——从House of Orange理解Heap是如何被拓展的) | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>关于如何理解Glibc堆管理器(Ⅵ——从House of Orange理解Heap是如何被拓展的)</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-08-07T12:23:25.000Z" id="date"> 2021-08-07</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.994Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>​</p>
+<p>本篇实为个人笔记，可能存在些许错误；若各位师傅发现哪里存在错误，还望指正。感激不尽。</p>
+<p>若有图片及文稿引用，将在本篇结尾处著名来源(也有置于篇首的情况)。</p>
+<h1 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h1><p><a target="_blank" rel="noopener" href="https://ctf-wiki.org/pwn/linux/user-mode/heap/ptmalloc2/house-of-orange/">https://ctf-wiki.org/pwn/linux/user-mode/heap/ptmalloc2/house-of-orange/</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/le119126/article/details/49338003">https://blog.csdn.net/le119126/article/details/49338003</a></p>
+<h1 id="正文："><a href="#正文：" class="headerlink" title="正文："></a>正文：</h1><p>        本节没有太多内容。本想将IO_FILE一起并入说明，但似乎那样就超出了本专栏的内容了，因此便作罢，仅从一个简单的案例说明这样一个情况：</p>
+<p><strong>当Top chunk不足以满足用户需求时，堆是如何拓展而为用户服务的</strong></p>
+<p>        在第一章时曾提到过，当堆的空间不足以满足申请时，堆管理器有两种拓展方式，其一是使用brk函数使堆向高地址拓展；其二则是使用mmap进行地址映射，从内核直接申请内存</p>
+<p>        以及，读者可能还不了解House of Orange，但这并不影响接下来的阅读，单纯是一个引子罢了，读者可以将其理解为：<strong>不使用free也能将chunk放入Unsorted Bin中的方法</strong></p>
+<h2 id="mmap："><a href="#mmap：" class="headerlink" title="mmap："></a>mmap：</h2><p>        尽管本文的重点并不在mmap分配上，但笔者仍觉得有必要对其做些介绍</p>
+<p>        笔者将mmap的作用理解为：建立内存与磁盘的映射关系，从而达到“只要读写内存即可读写磁盘”的目的。由于只需要读写内存，因此不用read&#x2F;write函数也能实现磁盘上读写</p>
+<p>        而在堆的分配中，当需要分配的chunk大小超过mmap分配的阈值(mmp_.mmap_threshold)时，管理器就会调用mmap来分配额外的heap，并在该heap完全不被使用时直接归还给内核</p>
+<p>        (注：mmp_.mmap_threshold通常为128K)</p>
+<p>        从这个角度来说，直接归还给内核的内存堆是难以利用的，因此也不在本文的主要讨论范围</p>
+<p>        可以参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/huxiao-tee/p/4660352.html">https://www.cnblogs.com/huxiao-tee/p/4660352.html</a></p>
+<p>        作者对mmap做了较为详细的介绍</p>
+<h2 id="brk："><a href="#brk：" class="headerlink" title="brk："></a>brk：</h2><h3 id="调试代码："><a href="#调试代码：" class="headerlink" title="调试代码："></a>调试代码：</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">#include &lt;stdio.h&gt;<br>#define fake_size 0x1fe1<br>int main(void)<br>&#123;<br>    size_t *p1,*p2,*p3,*p4;<br>    p1=malloc(0x10);<br>    p2=(void *)((int)p1+24);<br>    *((long long*)p2)=fake_size;<br>    p3=malloc(0x2000);<br>    p4=malloc(0x60);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/a27533a9-2abf-4b6d-8d2c-e7904f4e8032'><img src="blob:https://tokameine.top/a27533a9-2abf-4b6d-8d2c-e7904f4e8032"></p>
+<p>        断点定于第8行</p>
+<p>        此时的堆结构为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">gdb-peda$ heap<br>0x602000 FASTBIN &#123;<br>  prev_size = 0x0, <br>  size = 0x21, <br>  fd = 0x0, <br>  bk = 0x0, <br>  fd_nextsize = 0x0, <br>  bk_nextsize = 0x20fe1<br>&#125;<br>0x602020 PREV_INUSE &#123;<br>  prev_size = 0x0, <br>  size = 0x20fe1, <br>  fd = 0x0, <br>  bk = 0x0, <br>  fd_nextsize = 0x0, <br>  bk_nextsize = 0x0<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/0b6f5178-2702-4c53-acd2-7f99a881d6c9'><img src="blob:https://tokameine.top/0b6f5178-2702-4c53-acd2-7f99a881d6c9"></p>
+<p>        p1为0x602000处的chunk，而Top chunk则为0x602020处的chunk</p>
+<p>        第八行代码处，我们将Top chunk的size字段修改为0x1fe1，此时如果我们再申请0x2000大小的chunk，显然Top chunk已经不足以满足我们的要求了，那么第9行代码执行之后，bins的结构将为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">unsortedbin<br>all: 0x602020 —▸ 0x7ffff7dd1b78 (main_arena+88) ◂— 0x602020 /* &#x27;  `&#x27; */<br>gdb-peda$ p p3<br>$1 = (size_t *) 0x623010<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/c2498e70-0832-448d-a506-8987f82d0baf'><img src="blob:https://tokameine.top/c2498e70-0832-448d-a506-8987f82d0baf"></p>
+<p>        此时，原本的Top chunk已经被放入了Unsorted Bin中，而p3获得了从0x623000处开始的chunk</p>
+<p><strong>问题：</strong>fake_size的值是如何得来的，其他数值是否可行？</p>
+<p>        我们可以浏览如下代码得到答案：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">assert((old_top == initial_top(av) &amp;&amp; old_size == 0) <br>     ((unsigned long) (old_size) &gt;= MINSIZE &amp;&amp;<br>      prev_inuse(old_top) &amp;&amp;<br>      ((unsigned long)old_end &amp; pagemask) == 0));<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/2fd5d435-672d-4618-a92e-da76d0b7285e'><img src="blob:https://tokameine.top/2fd5d435-672d-4618-a92e-da76d0b7285e"></p>
+<p>        如果，原本的Top chunk还未初始化且size为0</p>
+<p>        或者，原Top chunk大小大于0x10，且前一个chunk被使用，且结束地址符合页对齐</p>
+<p>        那么则进行分配新的heap页</p>
+<p>        由于我们调用过一次malloc，因此Top chunk已经初始化，所以我们需要绕过的检查是第二个</p>
+<p>        1.伪造处的Size的最后一位必须为1，以表示前一个chunk处于使用(从实际情况考虑，只要没有遭到篡改，这是必然成立的条件)</p>
+<p>        2.结束地址符合页对齐。一个页面对应大小为4KB，既0x1000字节，也就是说，Top chunk的结束地址应该为0x1000的倍数</p>
+<p>        本例中原Top chunk为0x602020，只要保证 (0x602020+size)%0x1000&#x3D;&#x3D;0即可，因此0x0fe1、0x1fe1等符合情况的均可</p>
+<p>        不妨试着计算一下这个新heap的大小：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">gdb-peda$ x /10gx 0x623000+0x2000<br>0x625000:0x00000000000000000x0000000000000000<br>0x625010:0x00000000000000000x0000000000020ff1<br>0x625020:0x00000000000000000x0000000000000000<br>0x625030:0x00000000000000000x0000000000000000<br>0x625040:0x00000000000000000x0000000000000000<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/e3194b91-3a8d-4c9c-bc78-a3d0fe931263'><img src="blob:https://tokameine.top/e3194b91-3a8d-4c9c-bc78-a3d0fe931263"></p>
+<p>        可见其为0x23000，与第一个heap的0x21000还多出0x2000字节</p>
+<h3 id="说回Bins的放入规则："><a href="#说回Bins的放入规则：" class="headerlink" title="说回Bins的放入规则："></a><strong>说回Bins的放入规则</strong>：</h3><p>        堆管理器将原本的Top chunk放入Unsorted Bin，并分配一个新的Heap然后分割成chunk p3和Top chunk</p>
+<p>        至于原本的Top chunk，如果读者细看了它的size变化，应该会发现少了0x20字节，其实只是被prev_size、size、fd、bk指针占用了而已</p>
+<p>        感觉这东西似乎没什么可说的，以至于笔者有点不知道该如何描述才能将这种思路表达清楚，还望见谅 ​</p>
+<p>插画ID：91095963</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/08/07/glibc-7/">← Next 关于如何理解Glibc堆管理器(Ⅶ——Tcache Bins!!)</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/08/07/glibc-5/">关于如何理解Glibc堆管理器(Ⅴ——从Large Bin Attack理解malloc对Bins的分配) Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0%EF%BC%9A"><span class="toc-number">1.</span> <span class="toc-text">参考文章：</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%AD%A3%E6%96%87%EF%BC%9A"><span class="toc-number">2.</span> <span class="toc-text">正文：</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#mmap%EF%BC%9A"><span class="toc-number">2.1.</span> <span class="toc-text">mmap：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#brk%EF%BC%9A"><span class="toc-number">2.2.</span> <span class="toc-text">brk：</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B0%83%E8%AF%95%E4%BB%A3%E7%A0%81%EF%BC%9A"><span class="toc-number">2.2.1.</span> <span class="toc-text">调试代码：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%B4%E5%9B%9EBins%E7%9A%84%E6%94%BE%E5%85%A5%E8%A7%84%E5%88%99%EF%BC%9A"><span class="toc-number">2.2.2.</span> <span class="toc-text">说回Bins的放入规则：</span></a></li></ol></li></ol></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

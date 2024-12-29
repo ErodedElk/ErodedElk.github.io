@@ -1,0 +1,167 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PE结构详解 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>PE结构详解</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-02-24T18:14:48.000Z" id="date"> 2021-02-25</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.003Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p><strong>本篇笔记以我个人能够理解为基础，尽可能将其写成其他人也能明白的笔记。如果发现其中存在错误，请务必指正。</strong></p>
+<p>范本与工具：010Editor &amp; Notepad.exe &amp; kernel32.dll</p>
+<p><strong>PE文件种类：</strong></p>
+<p><strong>种类</strong></p>
+<p><strong>主拓展名</strong></p>
+<p>可执行</p>
+<p>EXE &#x2F; SCR</p>
+<p>驱动程序</p>
+<p>SYS &#x2F; VXD</p>
+<p>库</p>
+<p>DLL &#x2F; OCX &#x2F; CPL &#x2F; DRV</p>
+<p>对象文件</p>
+<p>OBJ (但这并不是可执行的，在逆向分析中不怎么需要关心)</p>
+<p>正经的PE结构头包括：</p>
+<p> <strong>DOS头(DOS header) &amp; DOS存根(Dos Stub) &amp; 节区头(Section header) &amp; NT头(NT header)</strong></p>
+<p>    其中，NT头包括了 <strong>文件头 与 可选头</strong> 。而节区头包括了 <strong>.text &#x2F; .bss &#x2F; .rdata &#x2F; .data &#x2F; .rsrc &#x2F; .edata &#x2F; .idata &#x2F; .pdata &#x2F; .debug 这九个预定义段</strong>，其分别规定了不同区块的访问权限、特性等内容。但并不是说每个应用程序都一定要规规矩矩的保留这些义段，对于那些用不到的区段是在程序中没有的，这一点可以自行打开程序确认。</p>
+<p>（比如：Notepad.exe只有 .text &#x2F; .data &#x2F; .rsrc 这三个义段和节区）</p>
+<p>（节区头的作用：PE文件包含多个节区，其包括了 Code节区 &#x2F; Data节区 &#x2F; Resource节区 等诸多节区，正因为节区之间相互区分，所以需要规定好程序可以对 一个节区做些什么 ，因此需要在节区头中去规定。所以这些义段和节区是一一对应的关系。）</p>
+<p>    PE头的详细内容将在下面写出，但在此之前，我觉得有必要先介绍一下VA,RVA等内容。以下也是些一概而论的东西，细节都将在之后解释。</p>
+<p>    VA(Virtual Address):虚拟地址。</p>
+<p>    RVA(Relative Virtual Address):相对虚拟地址</p>
+<p>    FOA(File Offset Address)：文件偏移地址。但是在很多地方并不这么称呼，他们会用FA,RAW来称呼FOA，实际上是一个东西。</p>
+<p>    Image Base：模块地址。指可执行文件加载到内存的时候所在的位置。</p>
+<p>    虚拟地址间的关系：</p>
+<p class='item-img' data-src='https://private.codecogs.com/gif.latex?RVA+Image%20Base%20=%20VA'><img src="https://private.codecogs.com/gif.latex?RVA+Image%20Base%20=%20VA" alt="RVA+Image Base = VA"></p>
+<p>    在很多时候，将一个程序加载到内存的时候，他的实际物理地址是不确定的。但文件总不会自己去寻址，必须要有人事先告诉他将要调用的函数在什么地方，如果用实际地址去描述的话，将会变得十分困难。为解决这个问题，人们构造出了“虚拟地址”的概念。将一个文件载入内存的时候，不管他被载入到了什么地方，都将其头地址映射到一块规定大小的虚拟地址空间(虚拟内存空间的大小可能比实际加载进内存所用的大小还大)，之后在调用任何一个函数的时候，都只需要访问虚拟地址即可。</p>
+<p>    但实际在访问的时候，也不是直接访问虚拟地址(特别是对DLL等动态链接库)，而是利用RVA来访问。比方说初始位置在0x1000，而某个函数在0x1400，则在访问该函数的时候通过0x1000+0x400来访问(RVA即是指0x400)。之所以这样，还是因为PE文件加载进内存的时候，也可能发生“当前位置已经被占用”的问题，但加载必然是按顺序进行的，所以相对位置不会发生变化。</p>
+<p>    (注：我觉得这样解释还是有些晦涩，所以再换了一种说法————将一个文件加载进内存，但现在我们无法知道其实际地址被放到了哪里。但我们一定清楚，我们想要调用的函数在文件开头往下找0x400的地方，那么程序在访问的时候将虚拟地址基址加上这个RVA就能找到实际的虚拟地址，然后再映射回去就能到达实际的物理地址。)</p>
+<p>    接下来将详细对PE头的内容进行介绍，这里用Notepad.exe来示范。将其用010Editor打开(用Hex Editor也行，但010的自动识别功能会在这里提供很大的方便，对我来说减少了很多不必要的烦恼……)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225115157609.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210225115157609.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/bf634eaa-65b5-437f-a5d7-75feb4979ed7">​</p>
+<p>    如图，010会将上述的PE结构头全都识别出来，并标好位置等。这将为接下来的介绍减少很多不必要的检索操作。</p>
+<p><strong>DOS头</strong>：</p>
+<p>    对应IMAGE_DOS_HEADER。在Microsoft Platform SSDK-winnt.h中可以找到他的成员，实际上就是一个C语言中的结构体。(通常是64字节的大小，但一些可以为缩减而设计的PE文件惊人的小，整个PE文件都只有97字节。但那都是特例，在学习过程中，我们可以权且将PE头每个部分都当作固定长度的结构体理解，不需要在意那些特例)</p>
+<p>(注：结构体代码放在结尾，其成员在下图可见)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225115901225.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210225115901225.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/f45934b7-f234-4cbf-b514-609077968601">​</p>
+<p>    MZSignature：DOS签名(4D5A经过ASCII值转换会为“MZ”，但图中写的是5A4D,这与Intel系列的CPU储存方式有关，该方法被称为<strong>“小端序标识法”</strong>，具体内容可自行搜索了解，在汇编的学习过程中，教科书上通常也会有介绍)。在一些书中，作者将把这一栏称之为e_magic**(原因出自于结构体定义的时候写下的名称，但几经迭代后可能就变得不一样了)<strong>。另外，</strong>MZ取自DOS可执行文件设计者的名字首字母**。</p>
+<p>    AddressOfNewExeHeader：指示NT头的偏移(不同文件可能有不同的值，也被称之为e_lfanew)，但注意，其数值应为000000E0(小端序)。</p>
+<p><strong>DOS存根：</strong></p>
+<p>    比较特殊的一项，即便没有这个结构体，程序也能在Windows下运行。但在DOS环境下，将会执行DOS存根中保留的代码。在本例中，将其在DOS环境下将会输出“This program cannot  be run in DOS mode”后退出(具体的执行方式可以查看其汇编代码)。(所用用这个特性也能做很多乱七八糟的事情，比如在EXE文件中创建另一个文件，然后支持DOS和Windows两个环境等)</p>
+<p><strong>NT头：</strong>(大小为F8)</p>
+<p>    <strong>Signature</strong>：签名。(同DOS签名相似，其数值经ASCII转换后为”PE”)</p>
+<p> <strong>IMAGE_FILE_HEADER文件头</strong>：(FileHeader)<img src="https://img-blog.csdnimg.cn/202102251254577.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70" class='item-img' data-src='https://img-blog.csdnimg.cn/202102251254577.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/202102251254577.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​</p>
+<p>    <strong>Machine</strong>：每个CPU都有唯一的Machine码，算是一种规定。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">#define IMAGE_FILE_MACHINE_I386 0x14c // Intel 386.<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/01a647c5-e5c9-4b3a-b94a-3ec004c04e74'><img src="blob:https://tokameine.top/01a647c5-e5c9-4b3a-b94a-3ec004c04e74"></p>
+<p>    诸如这样的定义，其表示兼容32位的Intel x86芯片。Notepad中的Machine码即位14C。类似的定义还有很多很多，细节可自查。</p>
+<p>    <strong>NumberOfSections</strong>：用于指出文件中存在的节区数量。(如果实际的节区数和这里记录的不一样，运行的时候会出错)</p>
+<p>    <strong>SizeOfOptionalHeader</strong>：用于指出IMAGE_OPTIONAL_HEADER32结构体的长度。(其实这一项是给PE装载器看的，结构体的长度都是固定好了的，不会因为这一项数值改变而改变)</p>
+<p>    <strong>Characteristics</strong>：用于标识文件的属性。这一栏的属性比较不好逐个说明，详细的内容放在最后的附录里面，可自行对照每一栏的用处。</p>
+<p>    <strong>TimeDataStamp</strong>：标识文件被编译器创建的时间。(应该是没太大用处的一项)</p>
+<p> <strong>IMAGE_OPTIONAL_HEADER32可选头</strong>：(OptionalHeader)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225134600443.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210225134600443.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/4c13bf01-1130-4e6e-bf31-ea6da109e7b2">​</p>
+<p>    这一栏太大了，以至于我没办法一张屏幕把全部都包括进图里……</p>
+<p>    <strong>Magic</strong>：标识32位与64位的标记(10B——32位，20B——64位)。</p>
+<p>    <strong>AddressOfEntryPoint</strong>：EP(EntryPoint)的RVA值。指出最先执行的代码的位置。</p>
+<p>    <strong>ImageBase</strong>：指出文件的优先装入地址(32位的虚拟内存的范围在0~FFFFFFFF，不同类型的文件回被写入不同的值。在执行的时候，PE装载器创建进程后，将会把EIP寄存器的值设定为ImageBase+AddressOfEntryPoint)</p>
+<p>    <strong>SectionAlignment &#x2F; FileAliganment</strong>：前者指定了节区在<strong>内存</strong>中的最小单位，后者指定了节区在<strong>磁盘</strong>中的最小单位。(磁盘文件或内存的节区大小一定和这二者成整数倍)</p>
+<p>    <strong>SizeOfImage</strong>：指定PE Image在虚拟内存中所占的空间的大小。</p>
+<p>    <strong>SizeOfHeaders</strong>：用于指出整个PE头的大小。</p>
+<p>    <strong>Subsystem</strong>：标识文件的类型。</p>
+<p>值</p>
+<p>含义</p>
+<p>备注</p>
+<p>1</p>
+<p>Driver</p>
+<p>系统驱动(如：ntfs.sys)</p>
+<p>2</p>
+<p>GUI</p>
+<p>窗口应用程序(如：notepad.exe)</p>
+<p>3</p>
+<p>GUI</p>
+<p>控制台应用程序(如：cmd.exe)</p>
+<p>    <strong>NumberOfRvaAndSize</strong>：指定DataDirectory数组(本例中也叫DataDirArray)的个数。</p>
+<p>    **DataDirectory(DataDirArray)**：这些数组里只有两个元素，VirtualAddress和Size。这些内容能够用于计算RAW的实际地址。</p>
+<p><strong>IMAGE_SECTION_HEADER节区头：</strong></p>
+<p>    能够规定不同节区的特性、访问权限等内容。同样按照数组的方式排列。一个单元对应一个节区。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225142345899.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210225142345899.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/ebfc535e-bdf7-4292-9d26-05cf46de7419">​</p>
+<p>    <strong>VirtualAddress</strong>：内存中节区的起始地址</p>
+<p>    <strong>VirtualSize</strong>：内存中节区的大小</p>
+<p>    <strong>SizeOfRawData</strong>：磁盘文件中节区所占的大小</p>
+<p>    <strong>PointerToRawData</strong>：磁盘文件中节区的起始位置</p>
+<p>    <strong>Characteristics</strong>：节区属性</p>
+<p>    其中，VA和PTRD(都是简写)不带任何值，由SectionAlignment和FileAlignment决定。</p>
+<p><strong>RVA to RAW：</strong></p>
+<p class='item-img' data-src='https://private.codecogs.com/gif.latex?RAW%20-%20PointerToRawData%20=%20RVA%20-%20VirtualAddress'><img src="https://private.codecogs.com/gif.latex?RAW%20-%20PointerToRawData%20=%20RVA%20-%20VirtualAddress" alt="RAW - PointerToRawData = RVA - VirtualAddress"></p>
+<p>    公式如上。在了解了以上信息后，即可通过该公式计算出RAW的值了。</p>
+<p>    范例：以Notepad.exe为例。在节区头的第一个单元中可找到VA&#x3D;1000h，以及PointerToRawData&#x3D;400h。</p>
+<p>    而RVA在DataDirArray中IMAGE_DATA_DIRECTORY Import中可见。其值为7604h。最后得出RAW&#x3D;6A04h</p>
+<p>    (可能会有人和我一样开始疑惑为什么RVA是这个值。事实上这个值是随意规定的，这个公式的目的是“我知道RVA，现在想计算RAW”，所以其实可以随意设定RVA值。但有必要说明的是，不同的RVA值会处在不同的节区中，例如RVA&#x3D;5000就在.text节区中，所以才到节区头中的第一个单元找VirtualAddress和PointerToRawData)</p>
+<p>    (如果你直接在010中转到6A04这个位置，你会发现它确实对应了了comdlg32.dll的数据块起始位置)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225145938398.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210225145938398.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/79ab9cfd-f5bc-4df6-9433-60647cf64db9">​</p>
+<p><strong>动态链接库DLL</strong>：</p>
+<p>    加载DLL的方式主要有两种——“显示链接”(用到时加载，用完就释放)和“隐式链接”(程序开始时加载，程序结束时释放)。而IAT提供的机制与隐式链接有关。如果使用OD或者x64dbg等反汇编软件打开范例，将在其调用函数的时候发现其写法套用了两层(call 1001104，而1001104处的值为7C8107F0，然后才是7C8107F0地址处存放的函数)。其中，1001104是一个固定的值，但7C8107F0则根据操作系统的不同而出现差异，于是在加载程序的时候，PE装载器会将正确的地址装入1001104处，以保证程序在各种环境下都能够正常使用(这样做的理由很多，除了让其能在多平台兼容外，也有因为实际地址可能出现不同的原因存在)。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225152719461.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210225152719461.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/15613f5d-417b-4f10-a5bf-2c8209acd501">​</p>
+<p>    以该链接库为例。</p>
+<p>    库名称Name：在注释里就有标出。通过7990算处RAW后直接查找过去，也能找到comdlg32.dll的字符串。</p>
+<p>    **OriginalFirstThunk(INT)**：包含函数导入信息的结构体指针。通过相同的方法到达6D90可见多个指针。(这实际上是一个数组，以NULL结尾，所以到00000000的时候就算结束了)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225153619547.png'><img src="https://img-blog.csdnimg.cn/20210225153619547.png"><img src="blob:https://tokameine.top/c09c47df-d818-46bb-8780-0fc087fa4606">​</p>
+<p>    自7A7A开始，每4个字节代表了一个指针。如果跟入7A7A(算出的RAW为6E7A)，就能找到函数的名称。(名称也是数组，同样用\0结尾。而000F为库内的函数的编号)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225154017847.png'><img src="https://img-blog.csdnimg.cn/20210225154017847.png"><img src="blob:https://tokameine.top/5c00afd0-c96e-4449-9cfb-3ced14a0178e">​</p>
+<p>    **导入地址表FirstThunk(IAT——Import Address Table)**：将12C4换为RAW&#x3D;6C4，跟入。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225154509176.png'><img src="https://img-blog.csdnimg.cn/20210225154509176.png"><img src="blob:https://tokameine.top/25419282-318a-4f49-a0a2-75c4d42b0dea">​</p>
+<p>    标蓝的区段即为IAT数组区域，对应了comdlg32.dll库。与INT类似，也用NULL结尾，以结构体指针为成员。</p>
+<p>    但76344906这个指针没有实际意义，当程序加载的内存的时候，准确的地址值会取代这个数值(这其中大概是PE装载器做了很多，但我不太了解这个东西)。</p>
+<p>EAT：</p>
+<p> <strong>IMAGE_EXPORT_DIRECTORY：</strong></p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210225160017751.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210225160017751.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/e5904070-06a6-49d7-8f33-d2a0a76e5802">​</p>
+<p>    <strong>NumberOfFunction</strong>：实际Export函数的个数</p>
+<p>    <strong>NumberOfNames</strong>：Export函数中有名字的函数个数、</p>
+<p>    <strong>AddressOfFunctions</strong>：Export函数地址数组</p>
+<p>    <strong>AddressOfNames</strong>：函数名称地址数组</p>
+<p>    <strong>AddressOfNameOrdinals</strong>：Ordinal地址数组</p>
+<p>    实际上，从库中获取函数需要调用GetProcAddress()函数。以下为该过程的流程。</p>
+<p>    首先，利用AddressOfNames成员转到函数名称位置。通过比较字符串的方法，查找到我们所想要的函数名称(这时候该数组的索引是name_index)。(可以假设我们在AddressOfNames[2]的位置找到了目标的名称，那么index&#x3D;2)</p>
+<p>    再利用AddressOfNameOrdinals数组找到对应的Ordinal值。(上一步找到了Index&#x3D;2，AddressOfNameOrdinals[Index]&#x3D;Ordinal，所以Ordinal&#x3D;2)</p>
+<p>    通过AddressOfFunctions和刚才获得的Ordinal值即可在AddressOfFunctions数组中获取目标函数的地址。(AddressOfFunctions[Ordinal]&#x3D;目标函数的RVA)</p>
+<p>最后是一些定义：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">typedef struct _IMAGE_DOS_HEADER &#123;      // DOS .EXE header<br>    WORD   e_magic;                     // Magic number<br>    WORD   e_cblp;                      // Bytes on last page of file<br>    WORD   e_cp;                        // Pages in file<br>    WORD   e_crlc;                      // Relocations<br>    WORD   e_cparhdr;                   // Size of header in paragraphs<br>    WORD   e_minalloc;                  // Minimum extra paragraphs needed<br>    WORD   e_maxalloc;                  // Maximum extra paragraphs needed<br>    WORD   e_ss;                        // Initial (relative) SS value<br>    WORD   e_sp;                        // Initial SP value<br>    WORD   e_csum;                      // Checksum<br>    WORD   e_ip;                        // Initial IP value<br>    WORD   e_cs;                        // Initial (relative) CS value<br>    WORD   e_lfarlc;                    // File address of relocation table<br>    WORD   e_ovno;                      // Overlay number<br>    WORD   e_res[4];                    // Reserved words<br>    WORD   e_oemid;                     // OEM identifier (for e_oeminfo)<br>    WORD   e_oeminfo;                   // OEM information; e_oemid specific<br>    WORD   e_res2[10];                  // Reserved words<br>    LONG   e_lfanew;                    // File address of new exe header<br>  &#125; IMAGE_DOS_HEADER, *PIMAGE_DOS_HEADER;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/d4b080ab-6e14-4c45-89a7-d67474cdfb97'><img src="blob:https://tokameine.top/d4b080ab-6e14-4c45-89a7-d67474cdfb97"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">typedef struct _IMAGE_FILE_HEADER &#123;<br>    WORD    Machine;<br>    WORD    NumberOfSections;<br>    DWORD   TimeDateStamp;<br>    DWORD   PointerToSymbolTable;<br>    DWORD   NumberOfSymbols;<br>    WORD    SizeOfOptionalHeader;<br>    WORD    Characteristics;<br>&#125; IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/cc9d0c91-4655-433c-933f-03f16689fbde'><img src="blob:https://tokameine.top/cc9d0c91-4655-433c-933f-03f16689fbde"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">typedef struct _IMAGE_OPTIONAL_HEADER &#123;<br>    //<br>    // Standard fields.<br>    //<br><br>    WORD    Magic;<br>    BYTE    MajorLinkerVersion;<br>    BYTE    MinorLinkerVersion;<br>    DWORD   SizeOfCode;<br>    DWORD   SizeOfInitializedData;<br>    DWORD   SizeOfUninitializedData;<br>    DWORD   AddressOfEntryPoint;<br>    DWORD   BaseOfCode;<br>    DWORD   BaseOfData;<br><br>    //<br>    // NT additional fields.<br>    //<br><br>    DWORD   ImageBase;<br>    DWORD   SectionAlignment;<br>    DWORD   FileAlignment;<br>    WORD    MajorOperatingSystemVersion;<br>    WORD    MinorOperatingSystemVersion;<br>    WORD    MajorImageVersion;<br>    WORD    MinorImageVersion;<br>    WORD    MajorSubsystemVersion;<br>    WORD    MinorSubsystemVersion;<br>    DWORD   Win32VersionValue;<br>    DWORD   SizeOfImage;<br>    DWORD   SizeOfHeaders;<br>    DWORD   CheckSum;<br>    WORD    Subsystem;<br>    WORD    DllCharacteristics;<br>    DWORD   SizeOfStackReserve;<br>    DWORD   SizeOfStackCommit;<br>    DWORD   SizeOfHeapReserve;<br>    DWORD   SizeOfHeapCommit;<br>    DWORD   LoaderFlags;<br>    DWORD   NumberOfRvaAndSizes;<br>    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];<br>&#125; IMAGE_OPTIONAL_HEADER32, *PIMAGE_OPTIONAL_HEADER32;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/21443913-158f-4c7d-b9d9-eafde5d5bc60'><img src="blob:https://tokameine.top/21443913-158f-4c7d-b9d9-eafde5d5bc60"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">typedef struct _IMAGE_OPTIONAL_HEADER64 &#123;<br>    WORD        Magic;<br>    BYTE        MajorLinkerVersion;<br>    BYTE        MinorLinkerVersion;<br>    DWORD       SizeOfCode;<br>    DWORD       SizeOfInitializedData;<br>    DWORD       SizeOfUninitializedData;<br>    DWORD       AddressOfEntryPoint;<br>    DWORD       BaseOfCode;<br>    ULONGLONG   ImageBase;<br>    DWORD       SectionAlignment;<br>    DWORD       FileAlignment;<br>    WORD        MajorOperatingSystemVersion;<br>    WORD        MinorOperatingSystemVersion;<br>    WORD        MajorImageVersion;<br>    WORD        MinorImageVersion;<br>    WORD        MajorSubsystemVersion;<br>    WORD        MinorSubsystemVersion;<br>    DWORD       Win32VersionValue;<br>    DWORD       SizeOfImage;<br>    DWORD       SizeOfHeaders;<br>    DWORD       CheckSum;<br>    WORD        Subsystem;<br>    WORD        DllCharacteristics;<br>    ULONGLONG   SizeOfStackReserve;<br>    ULONGLONG   SizeOfStackCommit;<br>    ULONGLONG   SizeOfHeapReserve;<br>    ULONGLONG   SizeOfHeapCommit;<br>    DWORD       LoaderFlags;<br>    DWORD       NumberOfRvaAndSizes;<br>    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];<br>&#125; IMAGE_OPTIONAL_HEADER64, *PIMAGE_OPTIONAL_HEADER64;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/faa5eea9-cd80-494f-a1e4-9be59c4c9305'><img src="blob:https://tokameine.top/faa5eea9-cd80-494f-a1e4-9be59c4c9305"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">typedef struct _IMAGE_NT_HEADERS &#123;<br>    DWORD Signature;<br>    IMAGE_FILE_HEADER FileHeader;<br>    IMAGE_OPTIONAL_HEADER32 OptionalHeader;<br>&#125; IMAGE_NT_HEADERS32, *PIMAGE_NT_HEADERS32;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/832103b2-c2aa-4e36-ab38-7c74442f3720'><img src="blob:https://tokameine.top/832103b2-c2aa-4e36-ab38-7c74442f3720"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">#define IMAGE_FILE_MACHINE_UNKNOWN           0<br>#define IMAGE_FILE_MACHINE_TARGET_HOST       0x0001  // Useful for indicating we want to interact with the host and not a WoW guest.<br>#define IMAGE_FILE_MACHINE_I386              0x014c  // Intel 386.<br>#define IMAGE_FILE_MACHINE_R3000             0x0162  // MIPS little-endian, 0x160 big-endian<br>#define IMAGE_FILE_MACHINE_R4000             0x0166  // MIPS little-endian<br>#define IMAGE_FILE_MACHINE_R10000            0x0168  // MIPS little-endian<br>#define IMAGE_FILE_MACHINE_WCEMIPSV2         0x0169  // MIPS little-endian WCE v2<br>#define IMAGE_FILE_MACHINE_ALPHA             0x0184  // Alpha_AXP<br>#define IMAGE_FILE_MACHINE_SH3               0x01a2  // SH3 little-endian<br>#define IMAGE_FILE_MACHINE_SH3DSP            0x01a3<br>#define IMAGE_FILE_MACHINE_SH3E              0x01a4  // SH3E little-endian<br>#define IMAGE_FILE_MACHINE_SH4               0x01a6  // SH4 little-endian<br>#define IMAGE_FILE_MACHINE_SH5               0x01a8  // SH5<br>#define IMAGE_FILE_MACHINE_ARM               0x01c0  // ARM Little-Endian<br>#define IMAGE_FILE_MACHINE_THUMB             0x01c2  // ARM Thumb/Thumb-2 Little-Endian<br>#define IMAGE_FILE_MACHINE_ARMNT             0x01c4  // ARM Thumb-2 Little-Endian<br>#define IMAGE_FILE_MACHINE_AM33              0x01d3<br>#define IMAGE_FILE_MACHINE_POWERPC           0x01F0  // IBM PowerPC Little-Endian<br>#define IMAGE_FILE_MACHINE_POWERPCFP         0x01f1<br>#define IMAGE_FILE_MACHINE_IA64              0x0200  // Intel 64<br>#define IMAGE_FILE_MACHINE_MIPS16            0x0266  // MIPS<br>#define IMAGE_FILE_MACHINE_ALPHA64           0x0284  // ALPHA64<br>#define IMAGE_FILE_MACHINE_MIPSFPU           0x0366  // MIPS<br>#define IMAGE_FILE_MACHINE_MIPSFPU16         0x0466  // MIPS<br>#define IMAGE_FILE_MACHINE_AXP64             IMAGE_FILE_MACHINE_ALPHA64<br>#define IMAGE_FILE_MACHINE_TRICORE           0x0520  // Infineon<br>#define IMAGE_FILE_MACHINE_CEF               0x0CEF<br>#define IMAGE_FILE_MACHINE_EBC               0x0EBC  // EFI Byte Code<br>#define IMAGE_FILE_MACHINE_AMD64             0x8664  // AMD64 (K8)<br>#define IMAGE_FILE_MACHINE_M32R              0x9041  // M32R little-endian<br>#define IMAGE_FILE_MACHINE_ARM64             0xAA64  // ARM64 Little-Endian<br>#define IMAGE_FILE_MACHINE_CEE               0xC0EE<br></code></pre></td></tr></table></figure><div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/03/06/upackpe/">← Next UPack PE文件分析与调试</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/02/21/assembly01/">常用命令 与 其他注释 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

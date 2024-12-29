@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>《操作系统真象还原》chapter12 笔记与思考 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>《操作系统真象还原》chapter12 笔记与思考</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-02-10T17:12:04.000Z" id="date"> 2022-02-11</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.013Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>本章内容只有一个：<strong>系统调用</strong></p>
+<p>实现的调用包括：sys_malloc、sys_free、sys_write、sys_getpid</p>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>可惜的是，本书本章使用的是目前Linux已经弃用的_syscallX方式。在原版的Linux中，这种方式最多只支持6个参数，限制诸多且据本书作者说还存在安全问题(不过我查了一圈不知道具体是指什么样的安全事件)。目前记笔记时姑且这样继续，事后自己尝试的时候再试试能不能实现更加现代化一点的操作。</p>
+<p>另外本书这节也实现了malloc和free，但其实现方式和我一直以来认知的堆管理似乎有很大的差别……考虑到实际的工程量问题，事后再尝试能否也做一些现代化的改造吧，当下先以笔记优先，姑且认同其实现方式。</p>
+<h3 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h3><p>仿造Linux的操作，只使用软中断0x80来实现系统调用，过程如下：</p>
+<p>维护一张系统调用表syscall_table，该表用于储存每个系统调用函数的地址<br>在IDT中注册0x80中断号对应的处理程序(称之为syscall_handler)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">make_idt_desc(&amp;idt[0x80], IDT_DESC_ATTR_DPL3, syscall_handler);<br></code></pre></td></tr></table></figure>
+
+<p>该处理函数根据中断调用号在系统调用表中寻址对应函数，这些函数是sys_funcname族函数，属于具体的实现函数<br>例如调用常规的getpid函数将引发如下操作：</p>
+<ul>
+<li>调用_syscall0函数传入getpid的调用号</li>
+<li>在_syscall0中向内核通过eax传参(即调用号)，然后触发0x80中断</li>
+<li>中断调用处理函数syscall_handler通过调用号在调用表中寻址得到对应的函数(sys_getpid)，该函数负责具体操作并返回结果</li>
+</ul>
+<p>注：pid是加在task_struct也就是PCB中的</p>
+<p>其实也没什么，单纯就是在触发中断以后进入处理函数，此时已经陷入内核，属于R0权级了，所有操作都能够正常进行了。特地为用户加一个进入内核方法罢了，只是所有方法的操作都被限制在固定范围。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">syscall_handler:<br>   push 0<br>   push ds<br>   push es<br>   push fs<br>   push gs<br>   pushad ; PUSHAD指令压入32位寄存器，其入栈顺序是:<br>   ; EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI<br>   push 0x80 ; 此位置压入0x80也是为了保持统一的栈格式<br>   ;2 为系统调用子功能传入参数<br>   push edx ; 系统调用中第3个参数<br>   push ecx ; 系统调用中第2个参数<br>   push ebx ; 系统调用中第1个参数<br>   call [syscall_table + eax*4] ; 编译器会在栈中根据C函数声明匹配正确数量的参数<br>   add esp, 12 ; 跨过上面的三个参数<br>   ;4 将call调用后的返回值存入待当前内核栈中eax的位置<br>   mov [esp + 8*4], eax<br>   jmp intr_exit ; intr_exit返回,恢复上下文<br></code></pre></td></tr></table></figure>
+
+<h3 id="printf和变长参数"><a href="#printf和变长参数" class="headerlink" title="printf和变长参数"></a>printf和变长参数</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">uint32_t printf(const char* format, ...) &#123;<br>    va_list args;<br>    va_start(args, format); // 使args指向format<br>    char buf[1024] = &#123;0&#125;; // 用于存储拼接后的字符串<br>    vsprintf(buf, format, args);<br>    va_end(args);<br>    return write(buf);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>printf中通过vsprintf将输入的参数和format适配并转换成新的字符串通过write函数输出</p>
+<p>变长参数的实现主要是出于c调用规则规定由调用者清理参数，所以调用printf函数push多少参数入栈，事后也要自己清理这些堆栈，所以不用担心这些参数淤积在栈里。</p>
+<p>所以需要关心的问题是，如何准确的适配所有参数？答案是提供了参数模板，也就是这里的格式化字符串。</p>
+<p>format中提供占位符来识别参数数量，有多少占位符就会用多少个参数，多的参数不会被用到，也不会留在栈里。至于少参数的情况……似乎没有高效的解决办法，即便现在2022年了，直接在C语言里直接这样写也会导致内存泄露：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">int* p=0;<br>printf(&quot;%p\n%p&quot;, p);<br></code></pre></td></tr></table></figure>
+
+<p>(当然，真要解决也不是没办法，只是需要付出更多的开销)</p>
+<p>至于vsprintf函数则只需要根据format来识别函数就行了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">uint32_t vsprintf(char* str, const char* format, va_list ap) &#123;<br>   char* buf_ptr = str;<br>   const char* index_ptr = format;<br>   char index_char = *index_ptr;<br>   int32_t arg_int;<br>   char* arg_str;<br>   while(index_char) &#123;<br>      if (index_char != &#x27;%&#x27;) &#123;<br>     *(buf_ptr++) = index_char;<br>     index_char = *(++index_ptr);<br>     continue;<br>      &#125;<br>      index_char = *(++index_ptr);     // 得到%后面的字符<br>      switch(index_char) &#123;<br>     case &#x27;s&#x27;:<br>        arg_str = va_arg(ap, char*);<br>        strcpy(buf_ptr, arg_str);<br>        buf_ptr += strlen(arg_str);<br>        index_char = *(++index_ptr);<br>        break;<br><br>     case &#x27;c&#x27;:<br>        *(buf_ptr++) = va_arg(ap, char);<br>        index_char = *(++index_ptr);<br>        break;<br><br>     case &#x27;d&#x27;:<br>        arg_int = va_arg(ap, int);<br>      /* 若是负数, 将其转为正数后,再正数前面输出个负号&#x27;-&#x27;. */<br>        if (arg_int &lt; 0) &#123;<br>           arg_int = 0 - arg_int;<br>           *buf_ptr++ = &#x27;-&#x27;;<br>        &#125;<br>        itoa(arg_int, &amp;buf_ptr, 10); <br>        index_char = *(++index_ptr);<br>        break;<br><br>     case &#x27;x&#x27;:<br>        arg_int = va_arg(ap, int);<br>        itoa(arg_int, &amp;buf_ptr, 16); <br>        index_char = *(++index_ptr); // 跳过格式字符并更新index_char<br>        break;<br>      &#125;<br>   &#125;<br>   return strlen(str);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>对于常规字符直接拷贝即可，遇到‘%’时根据下一个字符决定拷贝内容。</p>
+<h3 id="堆管理"><a href="#堆管理" class="headerlink" title="堆管理"></a>堆管理</h3><p>首先简述一下本书所实现的堆管理逻辑吧：</p>
+<p>sys_malloc：</p>
+<ul>
+<li>在每个任务的PCB中加入一个arena数组用于管理不同大小的chunk(其实就是GLIBC实现的Bins结构的简化版)</li>
+<li>初始化时将每个Bin中的free_list清空，然后初始化该Bin中能够存放的chunk数</li>
+<li>然后在用户实际调用malloc时，根据其所需要开辟的size选择对应的arena，然后从内核分配一个内存页，将该页按照该arena所管理的size切割成一块块chunk然后全都挂到其free_list里，最后从该链表里取出一块chunk分配给用户</li>
+</ul>
+<p>sys_free：</p>
+<ul>
+<li>对于一些小的需求，将该chunk重新挂回free_list即可</li>
+<li>对于需要返还内存页的情况，将用户虚拟地址位图中对应位置0，然后将自己PTE中对应的页的P位置0表示其不在内存中</li>
+<li>最后把物理内存池的位图中对应内存页的flag置0，表示该页可用</li>
+<li>另外还需要刷新TLS(用于缓存页表的硬件设备)</li>
+</ul>
+<p>逻辑和GLIBC有点像，不过是精简版的，个人认为这种方式虽然可行，但效率并没有GLIBC那样高。</p>
+<p>最后，为用户提供malloc和free函数，两个函数调用sys_malloc和sys_free就算完成了。</p>
+<p>嘛，如果到时候有机会的话可以试着实现一个看看，不过目前先就这样放着吧。本书最终的操作系统毕竟只是一个用于理解原理的精简版，所以知道真是情况以后还是省察着看吧。</p>
+<hr>
+<p>插画ID：90781328</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/02/11/systemkernel-chapter13/">← Next 《操作系统真象还原》chapter13 笔记与整理</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/02/09/systemkernel-chapter11/">《操作系统真象还原》chapter11 笔记与梳理 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">系统调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#printf%E5%92%8C%E5%8F%98%E9%95%BF%E5%8F%82%E6%95%B0"><span class="toc-number">3.</span> <span class="toc-text">printf和变长参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A0%86%E7%AE%A1%E7%90%86"><span class="toc-number">4.</span> <span class="toc-text">堆管理</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

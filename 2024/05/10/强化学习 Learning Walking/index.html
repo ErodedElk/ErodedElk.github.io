@@ -1,0 +1,171 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>强化学习 Learning Walking | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>强化学习 Learning Walking</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2024-05-10T10:28:03.000Z" id="date"> 2024-05-10</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.020Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>因为某些现实因素，来学点基础的强化学习内容丰富一下知识库。总体来说挺有趣的，但是搜出来的内容大多用了各种各样复杂的公示，而且有一些门槛，说实话对我这种浅尝辄止的需求有点太过了，以至于大部分文章看着非常晦涩……</p>
+<p>在这里自己整理一点相关内容以帮助理解和复习。</p>
+<h1 id="这里有些什么知识"><a href="#这里有些什么知识" class="headerlink" title="这里有些什么知识"></a>这里有些什么知识</h1><p>出于需求考虑，我需要对强化学习的相关内容有一个大致的理解，包括对相关算法的原理和是实现都能有一定程度上的理解。那么具体来说，本文会记录哪些内容呢？</p>
+<ul>
+<li>强化学习概述 - 是什么&#x2F;怎么做？</li>
+<li>马尔可夫决策过程 - 从原理上说，怎么做到的？</li>
+<li>Q-Learning - 一个案例，具体来说怎么 work？</li>
+<li>策略梯度 Policy Gradient</li>
+</ul>
+<p>如果你只需要知道强化学习大概是在做什么，那么只需要阅读第一节；而如果你需要知道在理论上是怎么做到的，那么阅读第二节即可；而如果需要知道具体来说代码是怎么实现的，那可以看看第三节。</p>
+<h1 id="Walking"><a href="#Walking" class="headerlink" title="Walking"></a>Walking</h1><h2 id="强化学习概述"><a href="#强化学习概述" class="headerlink" title="强化学习概述"></a>强化学习概述</h2><p>简单来说，强化学习的 “强化” 个人感觉贴近 “自我强化” 的感觉。其主要思想是基于机器人（agent）和环境（environment）的交互学习，其中，环境会返回状态（state）和奖励（reward）。</p>
+<p>一个简单的过程是这样的：</p>
+<p>环境和机器人都出于初始状态时，机器人通过自己的策略选择一个行为（action）作用到环境上，然后环境根据这个行为返回当前的状态和奖励值。奖励值有可能是正的，也有可能是负的，但机器人的目的是尽可能取得更高的奖励值。</p>
+<p>因此接下来，机器人会根据当前的奖励值决定接下来应该采取什么样的行为来提高奖励值。当环境遇到临界状态时（比如撞上死路之类的需要重启游戏的情况），环境和机器人都会重新回到初始状态再开始新一轮尝试，如此往复的过程称之为<strong>迭代</strong>。在若干轮迭代以后，机器人会选出一个对它来说最优的<strong>行动方案</strong>，这个行动方案就是我们最终训练出来的<strong>模型</strong>。</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_1.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_1.png"></p>
+<p>另外，我将状态（state）、时间（time）、行动（action）、奖励（reward）取首字母的星（star）模型表示整个强化学习的理论模型。感觉还挺好记的。</p>
+<h2 id="马尔可夫决策过程-Markov-Decision-Process"><a href="#马尔可夫决策过程-Markov-Decision-Process" class="headerlink" title="马尔可夫决策过程 Markov Decision Process"></a>马尔可夫决策过程 Markov Decision Process</h2><p>第一节描述的整个过程都是一个<strong>马尔可夫决策过程</strong>。在概率论中，马尔可夫模型是用于模拟随机变化系统的随机模型。这些模型最显著的特点，就是 “假设未来的状态仅依赖于当前状态，而不依赖于它之前发生的事件”。如果你了解过<strong>有限状态机</strong>，那差不多就是那种模型。一个状态到另外一个状态的转移只受到<strong>当前状态</strong>和<strong>当前状态发生转移时的概率分布</strong>。</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_2.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_2.png"></p>
+<h3 id="马尔科夫链-Markov-Chain"><a href="#马尔科夫链-Markov-Chain" class="headerlink" title="马尔科夫链 Markov Chain"></a>马尔科夫链 Markov Chain</h3><p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_3.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_3.png"></p>
+<p>马尔科夫链是最简单的马尔科夫模型。使用马尔科夫性质可以对进行建模。两个状态各自进行转移时只取决于当前状态和概率分布。</p>
+<h3 id="隐马尔科夫模型-Hidden-Markov-Model，HMM"><a href="#隐马尔科夫模型-Hidden-Markov-Model，HMM" class="headerlink" title="隐马尔科夫模型 Hidden Markov Model，HMM"></a>隐马尔科夫模型 Hidden Markov Model，HMM</h3><p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_4.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_4.png"><br>如果系统状态仅能部分观测到，换句话说是只能观察到和系统状态有关但不能直接精确确定系统状态的量。HMM 在语音识别领域中经常被提到，观察到的波形，背后的隐藏状态是文本。</p>
+<h3 id="决策过程"><a href="#决策过程" class="headerlink" title="决策过程"></a>决策过程</h3><p>在前文描述过一些大致的内容，在这里我们做一些细节上的符号理解。</p>
+<p>设当前时间为 t，从状态空间 S 中取出当前状态 st 来表示系统在 t 时刻观测到的状态；而机器人在当前时刻做出行动 at。那么整个系统运行的链条可以通过 s 和 a 来构成：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_5.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_5.png"></p>
+<ul>
+<li>下一个状态是由<strong>环境</strong>决定的（具体来说应该是由环境和接下来的动作决定的）</li>
+<li>下一个动作是由机器人的<strong>策略</strong>决定的</li>
+</ul>
+<p>而前文说过，机器人的目的是尽可能高的取得奖励，将这个策略反应到一个函数上：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_6.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_6.png"></p>
+<p>argmax 表示取使函数最大的自变量，星表示最优策略。即表示在历史状态上选出一个最优的行为使得函数最大。</p>
+<p>但由于这个模型是马尔科夫过程，也就是影响决策的条件只有当前状态，因此公示里的历史状态就可以简化掉了：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_7.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_7.png"></p>
+<p>也就是在当前状态下，选出一个使得函数最大的行为。</p>
+<p>既然行动决定好了，那么状态转移就好说了：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_8.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_8.png"></p>
+<p>在有限状态机里也有这样的描述，机器人做出行动后，由一定概率跳到某一状态。</p>
+<h3 id="奖励、近视远视与贝尔曼方程"><a href="#奖励、近视远视与贝尔曼方程" class="headerlink" title="奖励、近视远视与贝尔曼方程"></a>奖励、近视远视与贝尔曼方程</h3><p>在 MDP 模型中，每次从一个状态到另一个状态时，环境会给我们一个返回一个奖励 r。</p>
+<p>假设训练过程时间性上无穷的序列，在不停地重复迭代中，我们设置一个减弱的 “打折” 函数，来表示长期的回报：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_9.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_9.png"></p>
+<p>随着未来的步数增长，逐渐指数减弱影响。</p>
+<p>设如下函数为依据回报得到的价值函数，根据我们之前设置的 “远视” 系数，可以表示为：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_10.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_10.png"></p>
+<p>γ用作衰减的系数，其值小于 1，随着时间的增长会衰减，而后面跟着的则是每轮决策的奖励值，这样一来就可以得到<strong>从该状态开始未来的期望回报</strong>。</p>
+<p>但是因为我们训练不可能无穷无尽，必然要在某个时刻被结束，因此再通过贝尔曼方程对上述函数进行简化：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_11.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_11.png"><br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_12.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_12.png"><br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_13.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_13.png"></p>
+<p>简单来说，在某个状态下的奖励可以分为两个部分，<strong>即使奖励</strong>和<strong>加权后的后续奖励</strong>。</p>
+<p>即后续奖励&#x3D;当前状态的奖励+加权后的下个状态开始的后续奖励。</p>
+<p>实际上是换了个表现形式，将奖励的迭代只和下一步关联。这样就可以使用迭代函数来求值了，往下参考 Q-Learning。</p>
+<h2 id="Q-Learning"><a href="#Q-Learning" class="headerlink" title="Q-Learning"></a>Q-Learning</h2><p>Q-Learning 算法是上文所述的MDP模型的一个具体案例。其大致逻辑：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_14.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_14.png"></p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_15.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_15.png"></p>
+<p>大致来说，这个算法训练的目标是一个名为 Q-Table 的矩阵，流程如下：</p>
+<ul>
+<li>初始化 Q-Tabel</li>
+<li>选择 Action</li>
+<li>施行 Action</li>
+<li>评估回报</li>
+<li>更新 Q 值</li>
+</ul>
+<h3 id="初始化-Q-Table"><a href="#初始化-Q-Table" class="headerlink" title="初始化 Q-Table"></a>初始化 Q-Table</h3><p>构造一个m 列（m &#x3D; 动作数 )，n 行（n &#x3D; 状态数）的 Q-table，并将其中的值初始化为 0：<br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_16.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_16.png"></p>
+<p>整个模型会通过这个矩阵来表达训练的效果。</p>
+<h3 id="选取动作"><a href="#选取动作" class="headerlink" title="选取动作"></a>选取动作</h3><p>在基于当前的 Q 值估计得出的状态 s 下选择一个动作 a。</p>
+<p>在整个表处于初始状态时，因为目前没有任何能够裁定如何选择动作的方案，因此我们将根据贪婪策略（epsilon）来完成：</p>
+<ul>
+<li>我们指定一个探索速率「epsilon」，一开始将它设定为 1。在一开始，这个速率应该处于最大值，因为我们不知道 Q-table 中任何的值。这意味着，我们需要通过随机选择动作进行大量的探索。</li>
+<li>生成一个随机数（这里是小数）。如果这个数大于 epsilon，那么我们将会进行「利用」（这意味着我们在每一步利用已经知道的信息选择动作）。否则，我们将继续进行探索。</li>
+<li>在刚开始训练 Q 函数时，我们必须有一个大的 epsilon。随着智能体对估算出的 Q 值更有把握，我们将逐渐减小 epsilon。</li>
+</ul>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_17.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_17.png"></p>
+<h3 id="评估结果"><a href="#评估结果" class="headerlink" title="评估结果"></a>评估结果</h3><p>在上述过程中我们完成动作后将从环境得到一个奖励值 r，并更新环境状态为 s’。</p>
+<p>然后使用贝尔曼方程更新 Q-Table：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_18.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_18.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">New Q value = <br>   Current Q value + <br>   lr * [Reward + discount_rate * (highest Q value between possible actions from the new state s’ ) — Current Q value ]<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>lr：学习速率，一个常量</li>
+<li>Reward：本次行为的奖励值</li>
+<li>这次行动以后，未来预期中最大的 Q Value</li>
+</ul>
+<p>一个老鼠吃奶酪的例子：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_19.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_19.png"></p>
+<ul>
+<li>一块奶酪 &#x3D; +1</li>
+<li>两块奶酪 &#x3D; +2</li>
+<li>一大堆奶酪 &#x3D; +10（训练结束）</li>
+<li>吃到了鼠药 &#x3D; -10（训练结束）</li>
+</ul>
+<p>从起始点，你可以在向右走和向下走其中选择一个。由于有一个大的 epsilon 速率（因为我们至今对于环境一无所知），我们随机地选择一个。例如向右走。</p>
+<p>更新 Q 值的流程如下：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_20.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_20.png"></p>
+<p>唯一理解有点障碍的就是 ΔQ，简单来说就是：本次行动的回报+折算发现速率后在其他选择上得到的<strong>现在的</strong> Q 值的<strong>最大值</strong> - 这个选择<strong>现在的</strong> Q 值。</p>
+<p>需要注意的是，这里写的是“现在的”，也就是说，哪怕真的这么行动有可能带来更大的奖励，但因为 Q-Table 还没更新，所以现在也只能得到初始的 0。</p>
+<h2 id="策略梯度-Policy-Gradient"><a href="#策略梯度-Policy-Gradient" class="headerlink" title="策略梯度 Policy Gradient"></a>策略梯度 Policy Gradient</h2><p>介绍了上面的 QL（Q-Learning）算法以后，来看看强化学习中的另外一种基础算法。</p>
+<p>我们知道 QL 的输入是当前环境的状态和接下来采取的动作，然后输出一个奖励值，然后把该状态下所有的选项试一次，来找到一个奖励最大化的方案。但是这里面有一个明显的问题是，如果这次的行动会影响未来的收益，那么找到的结果永远都只能是局部的，也就是陷入所谓的“局部最优”策略中，贪婪算法往往都有这样的问题。</p>
+<p>而 PG（Policy Gradient）的输入是当前环境的状态，输出是动作。但每个动作都是有被执行的概率的，哪怕在当前情况下这个行为没有得到很好的收益，如果在未来带来了更大的收益，那么最终的策略还是会倾向到这个方向。</p>
+<blockquote>
+<p>It turns out that Q-Learning is not a great algorithm (you could say that DQN is so 2013 (okay I’m 50% joking)). In fact most people prefer to use Policy Gradients, including the authors of the original DQN paper who have shown Policy Gradients to work better than Q Learning when tuned well.</p>
+</blockquote>
+<h3 id="策略网络-Policy-Network"><a href="#策略网络-Policy-Network" class="headerlink" title="策略网络 Policy Network"></a>策略网络 Policy Network</h3><p>策略网络类似于 QL 算法里的策略，只是它综合了环境和决策。</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_21.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_21.png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python">h = np.dot(W1, x) <span class="hljs-comment"># compute hidden layer neuron activations  </span><br>h[h&lt;<span class="hljs-number">0</span>] = <span class="hljs-number">0</span> <span class="hljs-comment"># ReLU nonlinearity: threshold at zero  </span><br>logp = np.dot(W2, h) <span class="hljs-comment"># compute log probability of going up  </span><br>p = <span class="hljs-number">1.0</span> / (<span class="hljs-number">1.0</span> + np.exp(-logp)) <span class="hljs-comment"># sigmoid function (gives probability of going up)</span><br></code></pre></td></tr></table></figure>
+
+<p>直观上来说，隐层（W1）提取了图片中的各个特征，比如板子在哪儿，球在哪儿，输出层（W2）则决定了UP和DOWN的概率，所以，在Policy Network中，W1和W2是最重要的参数，我们要训练的就是这两组参数。</p>
+<h3 id="基本理论"><a href="#基本理论" class="headerlink" title="基本理论"></a>基本理论</h3><p>这个地方基本上套用 <strong>Yuang</strong> 的博客内容，仅在部分地方加一些注释。个人认为他说的要比我更加清晰易懂，就不再复述了。</p>
+<blockquote>
+<p>对于一个强化学习问题，这个问题的基本对象有这些：Actor、Environment、Reward Function。</p>
+<p>举个例子，AlphaGo下围棋的问题，Actor是AlphaGo，Environment是对手和棋盘，Reward Function基于围棋的规则。再举个栗子，我们玩电子游戏，手柄是Actor，电脑屏幕或者游戏机是Environment，Reward Function是杀死敌人或者占领据点（还是依据游戏规则）。其中Environment和Reward Function是我们<strong>无法</strong>在训练过程中改变的，只有Actor是<strong>受控</strong>的。</p>
+<p>那么如何控制Actor？</p>
+</blockquote>
+<blockquote>
+<p>我们对Actor的控制，需要策略，而策略我们用 𝜋 符号表示。</p>
+<p>𝜋 是一个参数为 𝜃 的神经网络，输入是 observation（矩阵）；输出是数量为 𝑛 的神经元。</p>
+<p>observation是给神经网络提供当前状态的参数，我们可以把游戏的当前图像作为observation，这时observation实际上是一串像素，我们也可以直接把各种参数作为observation，比如说我和敌人的距离、我方英雄技能的攻击范围。总之，observation提供了当前状态的特征。</p>
+<p>输出的每个神经元代表一个动作，神经元包含的值表示这个动作的发生概率。<br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_22.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_22.png"><br>我们按照概率来选择动作，概率高的自然梗容易被选择，并在选择后计算动作的奖励，第𝑖个动作𝑎𝑖的reward用𝑟𝑖表示。</p>
+</blockquote>
+<p>此处所说的参数 <strong>𝜃</strong> 在文中并没有描述，根据我自己的理解，我们可以把他当作对策略网络的定义。对于不同的参数，有不同的神经网络，而训练的目的就是找到一个合适的参数，令这个神经网络的效果最佳。因此找到这个参数就是我们的目标，更进一步说，找到这个神经网络就是我们的目的。在这里只需要把他当作一个用于定义神经网络各个属性的参数即可。</p>
+<h3 id="以电脑游戏为例"><a href="#以电脑游戏为例" class="headerlink" title="以电脑游戏为例"></a>以电脑游戏为例</h3><blockquote>
+<p>比如说我们玩一个电脑游戏，游戏现在的状态是𝑠1，然后 𝜋 选择了动作𝑎1，游戏照做了，然后我们计算一个reward 𝑟1；游戏在执行了动作𝑎1后的状态为𝑠2，然后我们再选择了动作𝑎2，执行动作后，计算了一个reward 𝑟2，这样一直下去，直到游戏结束（游戏赢了或者输了）。</p>
+<p>截止游戏结束，我们一共选择了𝑇个动作，计算出了𝑇个reward，这一回合我们称之为一个<strong>episode</strong>，一个episode的整个reward是每个动作的reward之和：<br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_23.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_23.png"><br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_24.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_24.png"><br>这整个episode是Environment、Actor之间的交互，在episode中产生了一串环境与动作的序列，叫做<strong>Trajectory</strong>（轨迹）。</p>
+<p><strong>Trajectory</strong> τ&#x3D;s1,a1,s2,a2,…,sT,aT</p>
+<p>我们可以算出整个trajectory的概率𝑝𝜃(𝜏)<br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_25.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_25.png"></p>
+</blockquote>
+<p>注：当前策略网络中，出现轨迹 <strong>τ</strong> 的概率为 <strong>pθ(τ)</strong></p>
+<blockquote>
+<p>有一点很<strong>重要</strong>，虽然在episode中，𝜃是确定的，但是Environment是不受我们控制的，所以即使在相同的𝜃下，游戏状态𝑠𝑖是不受控的，所以在不同的状态下，产生出的trajectory也会不同。所以要求在 𝜃 下的Reward，我们需要求R的期望Expectation<br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_26.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_26.png"><br>我们的目的很明确很简单，就是调整𝜃把𝑅𝜃 最大化，下面就是我们常用的梯度下降（Gradient Descent）</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_27.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_27.png"><br>其中：</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_28.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_28.png"><br>整个过程如图：<br class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_29.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_29.png"><br>在𝑁个episode中，我们要记录每一个𝜏𝑛中的序列对(𝑠𝑖𝑛,𝑎𝑖𝑛)，记录𝜏𝑛的reward𝑅(𝜏𝑛)，然后对𝜃进行更新。</p>
+</blockquote>
+<h2 id="异步优势A3C"><a href="#异步优势A3C" class="headerlink" title="异步优势A3C"></a>异步优势A3C</h2><p>这部分就不再复制粘贴了，这份博客写的非常详细，连我这种没入门的人都能看得懂了：<br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/wangxiaocvpr/p/8110120.html">https://www.cnblogs.com/wangxiaocvpr/p/8110120.html</a></p>
+<p>这里就提一句我比较在意的内容：为什么说A3C算法是综合了 QL 和 PG 两个算法？</p>
+<p>个人认为 QL 和 PG 的最明显的区别在于，QL 使用的是贪婪算法，它总是要去尽可能的测量所有行为的奖励，并籍此选出最合适的方案；而 PG 则引入了神经网络的方案，输出给出的不是确定的行动而是一组概率分布，并通过计算策略的梯度来优化未来输出的概率分布。</p>
+<p>那么在 Actor-Critic 算法中把这两个结合一下，通过 PG 算法来优化概率分布，再通过 QL 算法的方案来评估预期的奖励，选取奖励最大化的策略。</p>
+<p class='item-img' data-src='/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_30.png'><img src="/images/qianghuaxuexi/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%20Learning%20Walking_image_30.png"></p>
+<p>简单来说就是，在 QL 的算法中本来是只有 Critic 的，由一个 agent 来选取行为；而在 PG 的算法中是只有 actor 的，通过优化策略来提高效果。接下来把这两个角色凑到一起组成新的网络，一个负责输出 action 并自己学习优化策略，另外一个负责评价，提高精度。</p>
+<p>至于 A3C，其实就是把 AC 算法再拓展到异步去，在计算机实现里也就是多任务（多进程&#x2F;多线程）了。因为AC算法其实是在针对一份材料进行训练的，也就是说最终效果有可能会特化为对该材料特攻，所以用 A3C 算法让它同时针对多份不同材料进行训练，然后汇总到一起，以消除这个问题。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a target="_blank" rel="noopener" href="https://www.jiqizhixin.com/articles/2019-02-20-8">https://www.jiqizhixin.com/articles/2019-02-20-8</a><br><a target="_blank" rel="noopener" href="https://steinslab.io/archives/1621">https://steinslab.io/archives/1621</a><br><a target="_blank" rel="noopener" href="https://www.jiqizhixin.com/articles/2018-04-17-3">https://www.jiqizhixin.com/articles/2018-04-17-3</a><br><a target="_blank" rel="noopener" href="https://yuuuuang.com/2018/11/03/Policy-Gradient/">https://yuuuuang.com/2018/11/03/Policy-Gradient/</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/107906954">https://zhuanlan.zhihu.com/p/107906954</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/wangxiaocvpr/p/8110120.html">https://www.cnblogs.com/wangxiaocvpr/p/8110120.html</a></p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2024/05/31/Frida_Cheat_Sheet/">← Next Frida Cheat Sheet</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2024/04/08/%E5%BC%BA%E7%BD%91%E6%9D%AF2023Final-D8%E5%88%A9%E7%94%A8%E5%88%86%E6%9E%90%E2%80%94%E2%80%94%E4%BB%8E%E8%B6%8A%E7%95%8C%E8%AF%BB%E5%88%B0%E4%BB%BB%E6%84%8F%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C(CVE-2023-4427)/">强网杯2023Final-D8利用分析——从越界读到任意代码执行(CVE-2023-4427) Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%99%E9%87%8C%E6%9C%89%E4%BA%9B%E4%BB%80%E4%B9%88%E7%9F%A5%E8%AF%86"><span class="toc-number">2.</span> <span class="toc-text">这里有些什么知识</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Walking"><span class="toc-number">3.</span> <span class="toc-text">Walking</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%BF%B0"><span class="toc-number">3.1.</span> <span class="toc-text">强化学习概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A9%AC%E5%B0%94%E5%8F%AF%E5%A4%AB%E5%86%B3%E7%AD%96%E8%BF%87%E7%A8%8B-Markov-Decision-Process"><span class="toc-number">3.2.</span> <span class="toc-text">马尔可夫决策过程 Markov Decision Process</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E9%93%BE-Markov-Chain"><span class="toc-number">3.2.1.</span> <span class="toc-text">马尔科夫链 Markov Chain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9A%90%E9%A9%AC%E5%B0%94%E7%A7%91%E5%A4%AB%E6%A8%A1%E5%9E%8B-Hidden-Markov-Model%EF%BC%8CHMM"><span class="toc-number">3.2.2.</span> <span class="toc-text">隐马尔科夫模型 Hidden Markov Model，HMM</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%B3%E7%AD%96%E8%BF%87%E7%A8%8B"><span class="toc-number">3.2.3.</span> <span class="toc-text">决策过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A5%96%E5%8A%B1%E3%80%81%E8%BF%91%E8%A7%86%E8%BF%9C%E8%A7%86%E4%B8%8E%E8%B4%9D%E5%B0%94%E6%9B%BC%E6%96%B9%E7%A8%8B"><span class="toc-number">3.2.4.</span> <span class="toc-text">奖励、近视远视与贝尔曼方程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Q-Learning"><span class="toc-number">3.3.</span> <span class="toc-text">Q-Learning</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96-Q-Table"><span class="toc-number">3.3.1.</span> <span class="toc-text">初始化 Q-Table</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%89%E5%8F%96%E5%8A%A8%E4%BD%9C"><span class="toc-number">3.3.2.</span> <span class="toc-text">选取动作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%84%E4%BC%B0%E7%BB%93%E6%9E%9C"><span class="toc-number">3.3.3.</span> <span class="toc-text">评估结果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AD%96%E7%95%A5%E6%A2%AF%E5%BA%A6-Policy-Gradient"><span class="toc-number">3.4.</span> <span class="toc-text">策略梯度 Policy Gradient</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AD%96%E7%95%A5%E7%BD%91%E7%BB%9C-Policy-Network"><span class="toc-number">3.4.1.</span> <span class="toc-text">策略网络 Policy Network</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E7%90%86%E8%AE%BA"><span class="toc-number">3.4.2.</span> <span class="toc-text">基本理论</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%A5%E7%94%B5%E8%84%91%E6%B8%B8%E6%88%8F%E4%B8%BA%E4%BE%8B"><span class="toc-number">3.4.3.</span> <span class="toc-text">以电脑游戏为例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%82%E6%AD%A5%E4%BC%98%E5%8A%BFA3C"><span class="toc-number">3.5.</span> <span class="toc-text">异步优势A3C</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="toc-number">4.</span> <span class="toc-text">参考文章</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

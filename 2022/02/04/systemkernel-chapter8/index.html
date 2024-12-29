@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>《操作系统真象还原》chapter8 笔记与警醒 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>《操作系统真象还原》chapter8 笔记与警醒</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-02-03T16:27:35.000Z" id="date"> 2022-02-04</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.015Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><hr>
+<p>    读这章遇到的最大的问题就是：“我意会错了这一章想给我讲什么”，以至于整章读完十分困惑，一开始的问题没能解决以至于错过了很多东西，最终效果不是很好……</p>
+<p>    现在来重新梳理一下本章的内容究竟是在讲什么，解决什么问题。</p>
+<hr>
+<h3 id="PART-1"><a href="#PART-1" class="headerlink" title="PART 1"></a>PART 1</h3><p>    我将makefile、ASSERT、字符串操作，以及位图操作四个小节划分为第一部分，最后一节作为第二部分。</p>
+<p>    第一部分的内容不多，只涉及一些操作的实现，并没有具体到“欲解决的问题”。因此只需要了解其实现的原理，在以后需要自己手动实现的时候回顾即可。笔者以为不需要对这部分做过多的记录。</p>
+<p>    不过位图操作的概念和Part 2有一定的联系，因此在这里也需要再提几句。</p>
+<p>    位图(bitmap)的概念即将”bit位同一个具体事物间建立映射关系，用0和1标识事物的两个状态”。具体到之后的内存管理就是：</p>
+<blockquote>
+<p>以后的内存分配将以“内存页”为基本单位进行分配。建立位图和整块内存的映射关系，用1标识该内存页已被分配，用0标识该内存页未被分配。</p>
+<p>建立完成以后，从此便只需要扫描位图中的每个bit就能够得知内存中哪个内存页可用，方便以后进行内存分配。</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct bitmap &#123;<br>   uint32_t btmp_bytes_len;<br>   uint8_t* bits;<br>&#125;;<br>//位图是储存在内存里的，在平坦模式下的位图只需要一个指针加上标识位图长度的flag足矣。<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">int bitmap_scan(struct bitmap* btmp, uint32_t cnt) &#123;<br>   uint32_t idx_byte = 0;<br>   while (( 0xff == btmp-&gt;bits[idx_byte]) &amp;&amp; (idx_byte &lt; btmp-&gt;btmp_bytes_len)) &#123;<br>      idx_byte++;<br>   &#125;<br><br>   ASSERT(idx_byte &lt; btmp-&gt;btmp_bytes_len);<br>   if (idx_byte == btmp-&gt;btmp_bytes_len) &#123;    <br>      return -1;<br>   &#125;<br>   int idx_bit = 0;<br>   while ((uint8_t)(BITMAP_MASK &lt;&lt; idx_bit) &amp; btmp-&gt;bits[idx_byte]) &#123; <br>     idx_bit++;<br>   &#125;<br>   int bit_idx_start = idx_byte * 8 + idx_bit;    <br>   if (cnt == 1) &#123;<br>      return bit_idx_start;<br>   &#125;<br><br>   uint32_t bit_left = (btmp-&gt;btmp_bytes_len * 8 - bit_idx_start);   // 记录还有多少位可以判断<br>   uint32_t next_bit = bit_idx_start + 1;<br>   uint32_t count = 1;<br><br>   bit_idx_start = -1;<br>   while (bit_left-- &gt; 0) &#123;<br>      if (!(bitmap_scan_test(btmp, next_bit))) &#123;<br>     count++;<br>      &#125; else &#123;<br>     count = 0;<br>      &#125;<br>      if (count == cnt) &#123;<br>     bit_idx_start = next_bit - cnt + 1;<br>     break;<br>      &#125;<br>      next_bit++;          <br>   &#125;<br>   return bit_idx_start;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="PART-2"><a href="#PART-2" class="headerlink" title="PART 2"></a>PART 2</h3><p>    节名“内存管理系统”，但本节所指的内存是“物理内存”，本节管理的对象也是“物理内存”，而不是“虚拟内存”，但因为分页机制已经启用，所以本节所用的地址却是”虚拟地址“。但本节似乎过早的介绍了多进程中”每个进程独享4G地址空间“的概念，以至于我一直以为它接下来会实现这个功能，但结论并非如此，所以我算是扑空了。</p>
+<p>    本节的逻辑是这样的：</p>
+<p>    首先为了区分虚拟地址和物理空间，建立了”虚拟地址池“和”物理内存池“。同时，我们将整个物理内存分为”用户物理内存池“和”内核物理内存池“。</p>
+<p>    此处”建立“一次的过程包括：界定内存池基址、位图清零两个过程。</p>
+<p>    然后是构建分配机制。</p>
+<ul>
+<li>从虚拟地址池分配内存页</li>
+<li>从物理内存池分配内存页</li>
+<li>建立虚拟地址和物理地址的映射关系</li>
+</ul>
+<p>    但本节只涉及到了分配，却没用对应的归还操作。也不知道之后几章会不会涉及。</p>
+<p>    同时需要注意到，本节并未给内核建立独立的页表。我此前一直抱有”不同进程有着相同的虚拟地址“这一问题，也知道这需要通过切换页表来实现，但本节并未实现这个功能，它只是为内核添加了分配内存的能力罢了。具体看如下内容。</p>
+<p>    笔者认为最后一步是最难理解也最重要的。代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">static void page_table_add(void* _vaddr, void* _page_phyaddr) &#123;<br>   uint32_t vaddr = (uint32_t)_vaddr, page_phyaddr = (uint32_t)_page_phyaddr;<br>   uint32_t* pde = pde_ptr(vaddr);<br>   uint32_t* pte = pte_ptr(vaddr);<br>   if (*pde &amp; 0x00000001) &#123;     // 页目录项和页表项的第0位为P,此处判断目录项是否存在<br>      ASSERT(!(*pte &amp; 0x00000001));<br>      if (!(*pte &amp; 0x00000001)) &#123;<br>     *pte = (page_phyaddr  PG_US_U  PG_RW_W  PG_P_1);    // US=1,RW=1,P=1<br>      &#125; else &#123;<br>     PANIC(&quot;pte repeat&quot;);<br>     *pte = (page_phyaddr  PG_US_U  PG_RW_W  PG_P_1);      // US=1,RW=1,P=1<br>      &#125;<br>   &#125; else &#123;                // 页目录项不存在,所以要先创建页目录再创建页表项.<br>      uint32_t pde_phyaddr = (uint32_t)palloc(&amp;kernel_pool);<br>      *pde = (pde_phyaddr  PG_US_U  PG_RW_W  PG_P_1);<br>      memset((void*)((int)pte &amp; 0xfffff000), 0, PG_SIZE);<br>      ASSERT(!(*pte &amp; 0x00000001));<br>      *pte = (page_phyaddr  PG_US_U  PG_RW_W  PG_P_1);      // US=1,RW=1,P=1<br>   &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    虚拟地址是根据位图进行分配的，如果每个进程都存在一个位图的话，这里就可能出现相同的虚拟地址，但page_table_add函数是根据虚拟地址来获取pde和pte的，则相同的虚拟地址必然会出现冲突。因此本节并不是在解决这个问题，上面的函数实际实现的是<strong>平坦模式下单任务系统的内存分配</strong>，也就是在虚拟地址不会出现重复的情况下，为用户和内核分配内存以供其能够动态调整内存的使用。所以这里的”虚拟地址“是 <strong>”无物理地址直接映射的虚拟地址“</strong>，而不是 <strong>”虚拟内存空间中的虚拟地址“</strong>。理解这一点以后，本节就应该没有其他问题了。</p>
+<p>    page_table_add的逻辑是：</p>
+<ul>
+<li>通过虚拟地址得到此地址会被换算到的PDE和PTE</li>
+<li>如果页目录已经有对应的页表，那么直接把页表项填入物理地址即可建立映射</li>
+<li>如果页目录本项还未映射到具体的页表，那就申请一块内存页作为新的页表把它写在此PDE处，然后在新页表出写入物理地址</li>
+</ul>
+<p>        不过读的时候还在好奇为什么能用pte去当memset的参数，其实只需要记住pte是一个虚拟地址，是算出来的，在传入memset的时候还会在MMU中重新计算即可。</p>
+<hr>
+<h3 id="PART-3"><a href="#PART-3" class="headerlink" title="PART 3"></a>PART 3</h3><p>总结：</p>
+<blockquote>
+<p>    本节最终实现的是一个简化的平坦模式下内存分配器。建立的也只是平坦模式下的虚拟地址和物理地址间的映射管理。并未涉及 <strong>”虚拟内存“</strong> 的概，所有地址都应该保证不重复，否则会像double free那样出问题(此处会直接kernel panic)</p>
+<p>    同时，我们用的是”虚拟地址“，只需要记住我们用到的地址大多都是虚拟地址即可，就不容易出错了。</p>
+</blockquote>
+<p>琐碎：</p>
+<p>    可能是因为这几天状态很糟糕，每天都处于严重的睡眠不足的情况导致的(春节期间的麻烦太多了)，脑子在看书的时候很难集中注意力，以至于会意错了作者的意图……</p>
+<p>插画ID：77309888</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/02/06/systemkernel-chapter9/">← Next 《操作系统真象还原》chapter9 笔记与注意</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/01/31/systemkernel-chapter7/">《操作系统真象还原》chapter7笔记与总结 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#PART-1"><span class="toc-number">1.</span> <span class="toc-text">PART 1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PART-2"><span class="toc-number">2.</span> <span class="toc-text">PART 2</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PART-3"><span class="toc-number">3.</span> <span class="toc-text">PART 3</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

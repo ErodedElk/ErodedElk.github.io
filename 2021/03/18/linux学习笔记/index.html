@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Linux学习笔记 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>Linux学习笔记</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-03-18T15:23:01.000Z" id="date"> 2021-03-18</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.001Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>常规命令格式：command [-option] parameter1 parameter2 ……</p>
+<p>文件列表格式：</p>
+<p>[-rwxrwxrwx] 链接数 文件拥有者 所属用户组 文件大小 最后被修改时间 文件名</p>
+<p>第一节为十个字符，rwx分别表示“可读”“可写”“可执行”，后九个分别表示三个用户组所拥有的权限。第一个字符表示文件类型(d-目录&#x2F;“-”-文件&#x2F;l-链接文件&#x2F;b-设备&#x2F;c-端口设备&#x2F;)</p>
+<p>常用命令：(仅指明存在该命令，具体用法和参数使用man手册均可获得)</p>
+<p>man：man手册，查阅命令作用</p>
+<p>date：显示当前时间与日期</p>
+<p>locale：语言体系输出</p>
+<p>cal：显示日历</p>
+<p>ls：列出当前目录下的文件及相关信息</p>
+<p>chmod：修改文件权限(r-4,w-2,x-1)</p>
+<p>chgrp：修改用户组</p>
+<p>chown：修改拥有者</p>
+<p>cd：切换目录</p>
+<p>mkdir&#x2F;rmdir：建立新目录&#x2F;删除一个空目录</p>
+<p>touch：建立空文件</p>
+<p>pwd：显示当前目录</p>
+<p>cp&#x2F;rm&#x2F;mv：复制&#x2F;删除&#x2F;移动 文件(mv 可用于重命名，对于没有rename命令的系统可替代)</p>
+<p>FHS目录标准规定的Linux目录功能规范：必须存在的目录</p>
+<p>目录</p>
+<p>应放置档案内容</p>
+<p>&#x2F;bin</p>
+<p>系统有很多放置执行档的目录，但&#x2F;bin比较特殊。因为&#x2F;bin放置的是在单人维护模式下还能够被操作的指令。在&#x2F;bin底下的指令可以被root与一般帐号所使用，主要有：cat,chmod(修改权限), chown, date, mv, mkdir, cp, bash等等常用的指令。</p>
+<p>&#x2F;boot</p>
+<p>主要放置开机会使用到的档案，包括Linux核心档案以及开机选单与开机所需设定档等等。Linux kernel常用的档名为：vmlinuz ，如果使用的是grub这个开机管理程式，则还会存在&#x2F;boot&#x2F;grub&#x2F;这个目录。</p>
+<p>&#x2F;dev</p>
+<p>在Linux系统上，任何装置与周边设备都是以档案的型态存在于这个目录当中。 只要通过存取这个目录下的某个档案，就等于存取某个装置。比要重要的档案有&#x2F;dev&#x2F;null, &#x2F;dev&#x2F;zero, &#x2F;dev&#x2F;tty , &#x2F;dev&#x2F;lp*, &#x2F; dev&#x2F;hd*, &#x2F;dev&#x2F;sd*等等</p>
+<p>&#x2F;etc</p>
+<p>系统主要的设定档几乎都放置在这个目录内，例如人员的帐号密码档、各种服务的启始档等等。 一般来说，这个目录下的各档案属性是可以让一般使用者查阅的，但是只有root有权力修改。 FHS建议不要放置可执行档(binary)在这个目录中。 比较重要的档案有：&#x2F;etc&#x2F;inittab, &#x2F;etc&#x2F;init.d&#x2F;, &#x2F;etc&#x2F;modprobe.conf, &#x2F;etc&#x2F;X11&#x2F;, &#x2F;etc&#x2F;fstab, &#x2F;etc&#x2F;sysconfig&#x2F;等等。 另外，其下重要的目录有：&#x2F;etc&#x2F;init.d&#x2F; ：所有服务的预设启动script都是放在这里的，例如要启动或者关闭iptables的话： &#x2F;etc&#x2F;init.d&#x2F;iptables start、&#x2F;etc&#x2F;init.d&#x2F; iptables stop&#x2F;etc&#x2F;xinetd.d&#x2F; ：这就是所谓的super daemon管理的各项服务的设定档目录。&#x2F;etc&#x2F;X11&#x2F; ：与X Window有关的各种设定档都在这里，尤其是xorg.conf或XF86Config这两个X Server的设定档。</p>
+<p>&#x2F;home</p>
+<p>这是系统预设的使用者家目录(home directory)。 在你新增一个一般使用者帐号时，预设的使用者家目录都会规范到这里来。比较重要的是，家目录有两种代号： <br>~ ：代表当前使用者的家目录，而 ~guest：则代表用户名为guest的家目录。</p>
+<p>&#x2F;lib</p>
+<p>系统的函式库非常的多，而&#x2F;lib放置的则是在开机时会用到的函式库，以及在&#x2F;bin或&#x2F;sbin底下的指令会呼叫的函式库而已 。 什么是函式库呢？妳可以将他想成是外挂，某些指令必须要有这些外挂才能够顺利完成程式的执行之意。 尤其重要的是&#x2F;lib&#x2F;modules&#x2F;这个目录，因为该目录会放置核心相关的模组(驱动程式)。</p>
+<p>&#x2F;media</p>
+<p>media是媒体的英文，顾名思义，这个&#x2F;media底下放置的就是可移除的装置。 包括软碟、光碟、DVD等等装置都暂时挂载于此。 常见的档名有：&#x2F;media&#x2F;floppy, &#x2F;media&#x2F;cdrom等等。</p>
+<p>&#x2F;mnt</p>
+<p>如果妳想要暂时挂载某些额外的装置，一般建议妳可以放置到这个目录中。在古早时候，这个目录的用途与&#x2F;media相同啦。 只是有了&#x2F;media之后，这个目录就用来暂时挂载用了。</p>
+<p>&#x2F;opt</p>
+<p>这个是给第三方协力软体放置的目录 。 什么是第三方协力软体啊？举例来说，KDE这个桌面管理系统是一个独立的计画，不过他可以安装到Linux系统中，因此KDE的软体就建议放置到此目录下了。 另外，如果妳想要自行安装额外的软体(非原本的distribution提供的)，那么也能够将你的软体安装到这里来。 不过，以前的Linux系统中，我们还是习惯放置在&#x2F;usr&#x2F;local目录下。</p>
+<p>&#x2F;root</p>
+<p>系统管理员(root)的家目录。 之所以放在这里，是因为如果进入单人维护模式而仅挂载根目录时，该目录就能够拥有root的家目录，所以我们会希望root的家目录与根目录放置在同一个分区中。</p>
+<p>&#x2F;sbin</p>
+<p>Linux有非常多指令是用来设定系统环境的，这些指令只有root才能够利用来设定系统，其他使用者最多只能用来查询而已。放在&#x2F;sbin底下的为开机过程中所需要的，里面包括了开机、修复、还原系统所需要的指令。至于某些伺服器软体程式，一般则放置到&#x2F;usr&#x2F;sbin&#x2F;当中。至于本机自行安装的软体所产生的系统执行档(system binary)，则放置到&#x2F;usr&#x2F;local&#x2F;sbin&#x2F;当中了。常见的指令包括：fdisk, fsck, ifconfig, init, mkfs等等。</p>
+<p>&#x2F;srv</p>
+<p>srv可以视为service的缩写，是一些网路服务启动之后，这些服务所需要取用的资料目录。 常见的服务例如WWW, FTP等等。 举例来说，WWW伺服器需要的网页资料就可以放置在&#x2F;srv&#x2F;www&#x2F;里面。呵呵，看来平时我们编写的代码应该放到这里了。</p>
+<p>&#x2F;tmp</p>
+<p>这是让一般使用者或者是正在执行的程序暂时放置档案的地方。这个目录是任何人都能够存取的，所以你需要定期的清理一下。当然，重要资料不可放置在此目录啊。 因为FHS甚至建议在开机时，应该要将&#x2F;tmp下的资料都删除。</p>
+<p>可与根目录分开的目录：</p>
+<p>&#x2F;etc：配置文件</p>
+<p>&#x2F;bin：重要执行档</p>
+<p>&#x2F;dev：所需要的装置文件</p>
+<p>&#x2F;lib：执行档所需的函式库与核心所需的模块</p>
+<p>&#x2F;sbin：重要的系统执行文件</p>
+<p>建议可以存在的目录：</p>
+<p>&#x2F;home：系统默认的用户家目录。<del>：代表目前用户的家目录&#x2F;</del>dmtsai：代表dmtsai的家目录</p>
+<p>&#x2F;lib<qual>：存放与&#x2F;lib不同格式的二进制函数库</p>
+<p>&#x2F;root：系统管理员的家目录。</p>
+<p>目录</p>
+<p>应放置文件内容</p>
+<p>&#x2F;lost+found</p>
+<p>这个目录是使用标准的ext2&#x2F;ext3档案系统格式才会产生的一个目录，目的在于当档案系统发生错误时，将一些遗失的片段放置到这个目录下。 这个目录通常会在分割槽的最顶层存在，例如你加装一个硬盘于&#x2F;disk中，那在这个系统下就会自动产生一个这样的目录&#x2F;disk&#x2F;lost+found</p>
+<p>&#x2F;proc</p>
+<p>这个目录本身是一个虚拟文件系统(virtual filesystem)喔。 他放置的资料都是在内存当中，例如系统核心、行程资讯(process)（是进程吗?）、周边装置的状态及网络状态等等。因为这个目录下的资料都是在记忆体（内存）当中，所以本身不占任何硬盘空间。比较重要的档案（目录）例如： &#x2F;proc&#x2F;cpuinfo, &#x2F;proc&#x2F;dma, &#x2F;proc&#x2F;interrupts, &#x2F;proc&#x2F;ioports, &#x2F;proc&#x2F;net&#x2F;*等等。呵呵，是虚拟内存吗[guest]？</p>
+<p>&#x2F;sys</p>
+<p>这个目录其实跟&#x2F;proc非常类似，也是一个虚拟的档案系统，主要也是记录与核心相关的资讯。 包括目前已载入的核心模组与核心侦测到的硬体装置资讯等等。 这个目录同样不占硬盘容量。</p>
+<p> <strong>&#x2F;var 的意义与内容：</strong></p>
+<p>如果&#x2F;usr是安装时会占用较大硬盘容量的目录，那么&#x2F;var就是在系统运作后才会渐渐占用硬盘容量的目录。 因为&#x2F;var目录主要针对常态性变动的文件，包括缓存(cache)、登录档(log file)以及某些软件运作所产生的文件， 包括程序文件(lock file, run file)，或者例如MySQL数据库的文件等等。常见的次目录有：</p>
+<p>目录</p>
+<p>应放置文件内容</p>
+<p>&#x2F;usr&#x2F;X11R6&#x2F; </p>
+<p>为X Window System重要数据所放置的目录，之所以取名为X11R6是因为最后的X版本为第11版，且该版的第6次释出之意。 </p>
+<p>&#x2F;usr&#x2F;bin&#x2F; </p>
+<p>绝大部分的用户可使用指令都放在这里。请注意到他与&#x2F;bin的不同之处。(是否与开机过程有关) </p>
+<p>&#x2F;usr&#x2F;include&#x2F; </p>
+<p>c&#x2F;c++等程序语言的档头(header)与包含档(include)放置处，当我们以tarball方式 (*.tar.gz 的方式安装软件)安装某些数据时，会使用到里头的许多包含档。 </p>
+<p>&#x2F;usr&#x2F;lib&#x2F; </p>
+<p>包含各应用软件的函式库、目标文件(object file)，以及不被一般使用者惯用的执行档或脚本(script)。 某些软件会提供一些特殊的指令来进行服务器的设定，这些指令也不会经常被系统管理员操作， 那就会被摆放到这个目录下啦。要注意的是，如果你使用的是X86_64的Linux系统， 那可能会有&#x2F;usr&#x2F;lib64&#x2F;目录产生 </p>
+<p>&#x2F;usr&#x2F;local&#x2F; </p>
+<p>统管理员在本机自行安装自己下载的软件(非distribution默认提供者)，建议安装到此目录， 这样会比较便于管理。举例来说，你的distribution提供的软件较旧，你想安装较新的软件但又不想移除旧版， 此时你可以将新版软件安装于&#x2F;usr&#x2F;local&#x2F;目录下，可与原先的旧版软件有分别啦。 你可以自行到&#x2F;usr&#x2F;local去看看，该目录下也是具有bin, etc, include, lib…的次目录 </p>
+<p>&#x2F;usr&#x2F;sbin&#x2F; </p>
+<p>非系统正常运作所需要的系统指令。最常见的就是某些网络服务器软件的服务指令(daemon) </p>
+<p>&#x2F;usr&#x2F;share&#x2F; </p>
+<p>放置共享文件的地方，在这个目录下放置的数据几乎是不分硬件架构均可读取的数据， 因为几乎都是文本文件嘛。在此目录下常见的还有这些次目录：&#x2F;usr&#x2F;share&#x2F;man：联机帮助文件&#x2F;usr&#x2F;share&#x2F;doc：软件杂项的文件说明&#x2F;usr&#x2F;share&#x2F;zoneinfo：与时区有关的时区文件</p>
+<p>&#x2F;usr&#x2F;src&#x2F; </p>
+<p>一般原始码建议放置到这里，src有source的意思。至于核心原始码则建议放置到&#x2F;usr&#x2F;src&#x2F;linux&#x2F;目录下。</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/03/22/idaprobook/">← Next 《IDA权威指南》 Note</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/03/17/xxtea/">XXTEA加密流程分析 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

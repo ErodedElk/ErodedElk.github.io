@@ -1,0 +1,359 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>常用命令 与 其他注释 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>常用命令 与 其他注释</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-02-21T14:40:07.000Z" id="date"> 2021-02-21</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.985Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>因为网上各种各样的笔记都不如自己写一遍来得方便查阅，所以按照自己的喜好整理一下汇编的笔记。目前跟着Kip Irvine的书才学到第六章(条件跳转)，所以再之后的笔记暂时保留，等之后学完了再整理吧。</p>
+<p>部分表格来源于：</p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_36982160/article/details/82950848">https://blog.csdn.net/qq_36982160&#x2F;article&#x2F;details&#x2F;82950848</a></p>
+<p>插图ID:87882344</p>
+<p><strong>常用的寄存器：</strong></p>
+<p>31———-16</p>
+<p>15—8</p>
+<p>7—-0</p>
+<p>16位</p>
+<p>32位</p>
+<p>AH</p>
+<p>AL</p>
+<p>AX</p>
+<p>EAX</p>
+<p>BH</p>
+<p>BL</p>
+<p>BX</p>
+<p>EBX</p>
+<p>CH</p>
+<p>CL</p>
+<p>CX</p>
+<p>ECX</p>
+<p>DH</p>
+<p>DL</p>
+<p>DX</p>
+<p>EDX</p>
+<p>BP</p>
+<p>EBP</p>
+<p>SI</p>
+<p>ESI</p>
+<p>DI</p>
+<p>EDI</p>
+<p>SP</p>
+<p>ESP</p>
+<p>注：在VisualStudio还能看见EFL与EIP两种寄存器</p>
+<p>EAX：拓展累加器。常用于做累加器、取返回值等操作。</p>
+<p>EBX：基底暂存器。</p>
+<p>ECX：计数暂存器。</p>
+<p>EDX：资料暂存器。</p>
+<p>ESI：拓展源变址寄存器。</p>
+<p>EDI：拓展目的变址寄存器。</p>
+<p>ESP：拓展帧指针寄存器，也叫栈指针寄存器(extended stack pointer)，存放着一个指针，该指针永远指向系统栈最上面一个栈帧的栈顶(我将其当作一个指向当前调用处的栈指针)</p>
+<p>EBP：基址指针寄存器(extended base pointer)，存放着一个指针，该指针永远指向系统栈最上面一个栈帧的底部(我将其当作一个指向当前过程的起始栈址的栈指针)</p>
+<p>EFL：EFLAGS寄存器。包含了独立的二进制位(状态标志位)，用于控制CPU操作或反应CPU的结果。</p>
+<p>EIP：指令指针。存放下一条将要指向的指令的地址。</p>
+<p><strong>状态标志位：</strong></p>
+<p>CF进位标志位</p>
+<p>主要反映算术运算是否产生进位或借位，若产生，则CF&#x3D;1，否则CF&#x3D;0</p>
+<p>OF溢出标志位</p>
+<p>反映有符号数运算结果是否产生溢出，是置1，否置0</p>
+<p>SF符号标志位</p>
+<p>根据运算结果的最高位，若最高位为1则SF为1，否则为0，反映了有符号数运算结果的正负（0正1负）</p>
+<p>ZF零标志位</p>
+<p>反映运算结果是否为0</p>
+<p>AC辅助进位标志位</p>
+<p>AF&#x3D;1时,向高位或高字节进位或借位</p>
+<p>PF奇偶校验标志位</p>
+<p>运算结果操作数位为1的个数为偶数个时为1,否则为0.</p>
+<p class='item-img' data-src='http://1882.img.pp.sohu.com.cn/images/blog/2012/8/9/16/12/u55035262_139cdc470a4g85_blog.jpg'><img src="http://1882.img.pp.sohu.com.cn/images/blog/2012/8/9/16/12/u55035262_139cdc470a4g85_blog.jpg"></p>
+<p>对应EFL寄存器中的顺序。</p>
+<p>不过，有的集成开发环境里对状态标志位的写法是不一样的，下图为为别名(其实也不能称为别名，但姑且这么形容比较方便吧)。</p>
+<p class='item-img' data-src='https://tokameine.top/wp-content/uploads/2021/02/ASM.jpg'><img src="https://tokameine.top/wp-content/uploads/2021/02/ASM.jpg"></p>
+<h3 id="状态标志操作指令"><a href="#状态标志操作指令" class="headerlink" title="状态标志操作指令"></a>状态标志操作指令</h3><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>CLC（clear carry flag）</p>
+<p>清进位标志指令</p>
+<p>CLC</p>
+<p>使进位标志CF为0</p>
+<p>STC(set carry flag)</p>
+<p>置进位标志指令</p>
+<p>STC</p>
+<p>使进位标志CF为1</p>
+<p>CMC（complement carry flag）</p>
+<p>进位标志取反指令</p>
+<p>CMC</p>
+<p>使进位标志CF取反</p>
+<p>LAHF（load status flags into AH register）</p>
+<p>获取状态标志操作指令</p>
+<p>LAHF</p>
+<p>把位于标志寄存器低端的5个状态标志位（p26图2.3）信息同时送到寄存器AH的对应位</p>
+<p>SAHF（store AH into Flags）</p>
+<p>设置状态标志操作指令</p>
+<p>SAHF</p>
+<p>对标志寄存器中的低8位产生影响，使得状态标志位SF、ZF、AF、PF和CF分别成为来自寄存器AH中对应位的值，但保留位（位1、位3、位5）不受影响</p>
+<h4 id="数据类型："><a href="#数据类型：" class="headerlink" title="数据类型："></a>数据类型：</h4><p>类型</p>
+<p>用法</p>
+<p>BYTE</p>
+<p>8位无符号整数，B代表字节</p>
+<p>SBYTE</p>
+<p>8位有符号整数，S代表有符号</p>
+<p>WORD</p>
+<p>16位无符号整数</p>
+<p>SWORD</p>
+<p>16位有符号整数</p>
+<p>DWORD</p>
+<p>32位无符号整数，D代表双(字)</p>
+<p>SDWORD</p>
+<p>32位有符号整数</p>
+<p>FWORD</p>
+<p>48位整数(保护模式下的远指针)</p>
+<p>QWORD</p>
+<p>64位整数，Q代表四(字)</p>
+<p>TBYTE</p>
+<p>80位整数，T代表10字节</p>
+<p>REAL4</p>
+<p>32位IEEE短实数(4字节)</p>
+<p>REAL8</p>
+<p>64位IEEE长实数(8字节)</p>
+<p>REAL10</p>
+<p>80位IEEE拓展实数(10字节)</p>
+<p>伪指令：</p>
+<p>指令</p>
+<p>作用</p>
+<p>“&#x3D;”</p>
+<p>可将立即数与标记划等号，在调用标记时将直接进行替代</p>
+<p>“$”</p>
+<p>当前地址计数器。直接代表了当前位置的地址偏移量</p>
+<p>DUP</p>
+<p>可直接为数据分配空间。例：BYTE 20 DUP(0) 分配20字节</p>
+<p>EQU</p>
+<p>将符号名称与整数表达式或任意文本相连(类似于”&#x3D;”,但更偏向于定义赋值,区别在于不可重定义)</p>
+<p>TEXTEQU</p>
+<p>创建文本宏。<text>分配文本&#x2F;textmacro分别文本宏内容&#x2F;%constExpr分配整数常量</p>
+<p>关于汇编的伪指令其实还有很多，诸如 .break&#x2F;.else&#x2F;.if等等形如C语言中的操作，也支持”&#x3D;&gt;”&#x2F;“&#x3D;&#x3D;”等判断符。</p>
+<h4 id="简单传送指令"><a href="#简单传送指令" class="headerlink" title="简单传送指令"></a>简单传送指令</h4><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>MOV</p>
+<p>传送指令</p>
+<p>MOV DEST,SRC</p>
+<p>DEST&lt;&#x3D;SRC</p>
+<p>XCHG</p>
+<p>交换指令</p>
+<p>XCHG OPER1,OPER2</p>
+<p>把操作数oper1的内容与操作数oper2的内容交换</p>
+<p>oper1和oper2可以是通用寄存器或存储单元，但不能同时是操作单元，也不能是立即数。</p>
+<h2 id="拓展传送指令"><a href="#拓展传送指令" class="headerlink" title="拓展传送指令"></a>拓展传送指令</h2><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>MOVSX</p>
+<p>符号拓展传送指令</p>
+<p>MOVSX DEST,SRC</p>
+<p>把源操作数SRC符号拓展后送至目的操作数DEST</p>
+<p>src可以是通用寄存器或者存储单元，但是dest只能是通用寄存器（零拓展传送指令不会改变源操作数，也不影响标志寄存器的状态）</p>
+<p>MOVZX</p>
+<p>MOVZX DEST,SRC</p>
+<p>把源操作数SRC零拓展后送至目的操作数DEST</p>
+<p>零拓展传送指令不会改变源操作数，也不影响标志寄存器的状态</p>
+<h4 id="简单加减指令"><a href="#简单加减指令" class="headerlink" title="简单加减指令"></a>简单加减指令</h4><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>ADD</p>
+<p>加法指令</p>
+<p>ADD DEST,SRC</p>
+<p>DEST&lt;&#x3D;DEST SRC</p>
+<p>两数相加，结果于前</p>
+<p>SUB</p>
+<p>减法指令</p>
+<p>SUB DEST,SRC</p>
+<p>DEST&lt;&#x3D;DEST-SRC</p>
+<p>两数相减，结果于前</p>
+<p>INC</p>
+<p>加1指令</p>
+<p>INC DEST</p>
+<p>DEST&lt;&#x3D;DEST 1</p>
+<p>DEC</p>
+<p>减1指令</p>
+<p>DEC DEST</p>
+<p>DEST&lt;&#x3D;DEST-1</p>
+<p>NEG</p>
+<p>取补指令</p>
+<p>NEG OPRD</p>
+<p>OPRD&#x3D;0-OPRD</p>
+<p>对操作数取补（相反数）</p>
+<h4 id="常用条件转移指令"><a href="#常用条件转移指令" class="headerlink" title="常用条件转移指令"></a>常用条件转移指令</h4><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>CMP</p>
+<p>比较指令</p>
+<p>CMP DEST,SRC</p>
+<p>根据dest-src的差影响各状态标志寄存器</p>
+<p>不把dest-src的结果送入dest</p>
+<p>JMP</p>
+<p>无条件段内直接转移指令</p>
+<p>JMP LABEL</p>
+<p>使控制无条件地转移到标号为label的位置</p>
+<p>无条件转移指令本身不影响标志</p>
+<p class='item-img' data-src='https://picture-pool.oss-cn-beijing.aliyuncs.com/006tNbRwgy1fvxm0ya707j30vo0ychdt.jpg'><img src="https://picture-pool.oss-cn-beijing.aliyuncs.com/006tNbRwgy1fvxm0ya707j30vo0ychdt.jpg"></p>
+<h3 id="堆栈和堆栈操作"><a href="#堆栈和堆栈操作" class="headerlink" title="堆栈和堆栈操作"></a>堆栈和堆栈操作</h3><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>PUSH</p>
+<p>进栈指令</p>
+<p>PUSH SRC</p>
+<p>把源操作数src压入堆栈</p>
+<p>源操作数src可以是32位通用寄存器、16位通用寄存器和段寄存器，也可以是双字存储单元或者字符存储单元，还可以是立即数</p>
+<p>POP</p>
+<p>出栈指令</p>
+<p>POP DEST</p>
+<p>从栈顶弹出一个双字或字数据到目的操作数</p>
+<p>如果目的操作数是双字的，那么就从栈顶弹出一个双字数据，否则，从栈顶弹出一个字数据，出栈至少弹出一个字（16位）该指令弹出ESP处数据</p>
+<p>PUSHA</p>
+<p>16位通用寄存器全进栈指令</p>
+<p>PUSHA</p>
+<p>将所有8个16位通用寄存器的内容压入堆栈</p>
+<p>压入顺序是AX CX DX BX SP BP SI DI，然后对战指针寄存器SP的值减16，所以SP进栈的内容是PUSHA指令执行之前的值</p>
+<p>POPA</p>
+<p>16位通用寄存器全出栈指令</p>
+<p>POPA</p>
+<p>以PUSHA相反的顺序从堆栈中弹出内容，从而恢复PUSHA之前的寄存器状态</p>
+<p>SP的值不是由堆栈弹出的，而是通过增加16来恢复</p>
+<p>PUSHAD</p>
+<p>32位通用寄存器全进栈指令</p>
+<p>PUSHAD</p>
+<p>将所有8个32位通用寄存器的内容压入堆栈</p>
+<p>压入顺序是EAX ECX EDX EBX ESP EBP ESI EDI，然后对栈指针寄存器ESP的值减32，所以SP进栈的内容是PUSHAD指令执行之前的值</p>
+<p>POPAD</p>
+<p>32位通用寄存器全出栈指令</p>
+<p>POPAD</p>
+<p>以PUSHAD相反的顺序从堆栈中弹出内容，从而恢复PUSHAD之前的寄存器状态</p>
+<p>ESP的值不是由堆栈弹出的，而是通过增加32来恢复</p>
+<h2 id="过程调用和返回指令"><a href="#过程调用和返回指令" class="headerlink" title="过程调用和返回指令"></a>过程调用和返回指令</h2><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>CALL</p>
+<p>过程调用指令</p>
+<p>CALL LABEL</p>
+<p>段内直接调用LABEL</p>
+<p>与jmp的区别在于call指令会在调用label之前保存返回地址（call 中return之后主程序还可以继续执行，jmp 当label执行完毕后不能返回主程序继续执行）</p>
+<p>RET</p>
+<p>段内过程返回指令</p>
+<p>RET</p>
+<p>使子程序结束，继续执行主程序</p>
+<p>ret 4；ret 8等分别标识返回后回退的栈帧大小</p>
+<h2 id="逻辑运算指令"><a href="#逻辑运算指令" class="headerlink" title="逻辑运算指令"></a>逻辑运算指令</h2><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>NOT</p>
+<p>否运算指令</p>
+<p>NOT OPRD</p>
+<p>把操作数OPRD按位取反，然后送回OPRD</p>
+<p>AND</p>
+<p>与运算指令</p>
+<p>AND DEST，SRC</p>
+<p>把两个操作数进行与运算之后结果送回DEST</p>
+<p>同1得1，否则得0</p>
+<p>OR</p>
+<p>或运算指令</p>
+<p>OR DEST，SRC</p>
+<p>把两个操作数进行或运算之后结果送回DEST</p>
+<p>同0得0，否则得1</p>
+<p>XOR</p>
+<p>异或运算</p>
+<p>XOR DEST，SRC</p>
+<p>把两个操作数进行异或运算之后结果送回DEST</p>
+<p>相同得0不同得1</p>
+<p>TEST</p>
+<p>测试指令</p>
+<p>TEST DEST，SRC</p>
+<p>与AND指令类似，将各位相与，但是结果不送回DEST，仅影响状态位标志，指令执行后，ZF、PF、SF反映运算结果，CF和OF被清零</p>
+<p>通常用于检测某些位是否为1，但又不希望改变操作数的值</p>
+<h3 id="循环指令"><a href="#循环指令" class="headerlink" title="循环指令"></a>循环指令</h3><p>指令</p>
+<p>中文名</p>
+<p>格式</p>
+<p>解释</p>
+<p>备注</p>
+<p>LOOP</p>
+<p>计数循环指令</p>
+<p>LOOP LABEL</p>
+<p>使ECX的值减1，当ECX的值不为0的时候跳转至LABEL，否则执行LOOP之后的语句</p>
+<p>LOOPE</p>
+<p>等于循环指令</p>
+<p>LOOPE LABEL</p>
+<p>使ECX的值减1，如果结果不等于0并且零标志ZF等于1（表示相等），那么就转移到LABEL，否则执行LOOPE之后的语句</p>
+<p>LOOPZ</p>
+<p>零循环指令</p>
+<p>LOOPZ LABEL</p>
+<p>使ECX的值减1，如果结果不等于0并且零标志ZF等于1（表示相等），那么就转移到LABEL，否则执行LOOPZ之后的语句</p>
+<p>LOOPNE</p>
+<p>不等于循环指令</p>
+<p>LOOPE LABEL</p>
+<p>使ECX的值减1，如果结果不等于0并且零标志ZF等于0（表示不相等），那么就转移到LABEL，否则执行LOOPNE之后的语句</p>
+<p>LOOPNZ</p>
+<p>非零循环指令</p>
+<p>LOOPNZ LABEL</p>
+<p>使ECX的值减1，如果结果不等于0并且零标志ZF等于0（表示不相等），那么9就转移到LABEL，否则执行LOOPNZ之后的语句</p>
+<p>JECXZ</p>
+<p>计数转移指令</p>
+<p>JECXZ LABEL</p>
+<p>当寄存器ECX的值为0时转移到LABEL，否则顺序执行</p>
+<p>通常在循环开始之前使用该指令，所以循环次数为0时，就可以跳过循环体</p>
+<p>LEA：将存储器操作数mem的4位16进制偏移地址送到指定的寄存器。</p>
+<p>LEA reg16,mem</p>
+<p>ENTER&#x2F;LEAVE：自动创建栈帧&#x2F;自动删除栈帧</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">MySub PROC<br>    ENTER 8,0<br>    .<br>    .<br>    .<br>    LEAVE<br>    RET<br>MySub ENDP<br>;上下两端代码有着相同的意义 编译器将把上面的代码翻译为下面的代码<br>MySub PROC<br>    push ebp<br>    mov ebp,esp<br>    sub esp,8<br>    .<br>    .<br>    .<br>    mov esp,ebp<br>    pop ebp<br>    ret<br>MySub ENDP<br></code></pre></td></tr></table></figure>
+
+<p>REP：重复指令。以ECX为计数器。</p>
+<blockquote>
+<p>rep movs dword ptr es:[edi],dword ptr ds:[esi]<br>意思bai就是将ESI指向的du地址zhi的值以4字节方式拷贝到daoEDI指向的地址中，重复执行ECX次，每次执zhuan行后ESI+4，EDI+4，ECX-1，OD中在这段代码中下断后按F7单步步入就可以观察到这3个寄存器的变化</p>
+</blockquote>
+<p>STOS：是将AL&#x2F;AX&#x2F;EAX的值存储到[EDI]指定的内存单元中</p>
+<p>STOS BYTE PTR ES:[EDI]       ——BYTE：把al的值放到EDI指定的位置</p>
+<p>STOS WORD PTR ES:[EDI]   　 ——WORD：把ax的值放到EDI的指定位置</p>
+<p>STOS DWORD PTR ES:[EDI]　　——DWORD：把EAX的值放到EDI的位置</p>
+<p>INVOKE：只用于32位模式，用于将参数入栈(INVOKE procedureName [, arguementList])后者代表入栈的数据，可为列表</p>
+<p>PROC：(label PROC [attributes] [USES reglist] ,paramenter_list)</p>
+<p>PROTO：64位中用于指定程序的外部过程&#x2F;32位中可包含参数</p>
+<p>如上三者分别可在32位模式下表示：(过程调用——过程实现——过程原型)</p>
+<p>汇编语言的常用编辑格式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">.386;表示为32位程序<br>.model flat,stdcall;储存形式 声明(内存模式/调用规范)<br>.stack 4096; 表示分配4096字节空间用于堆栈<br>ExitProcess PROTO,dwExitCode:DWORD<br>INCLUDE Irvine32.inc;调用链接库<br>;分号在汇编中为注释符<br>.data ;可在下方申请变量<br>VALL BYTE 20h,30h,40h,50h;数组声明<br>greet BYTE &quot;hello world&quot;,0<br>  BYTE &quot;i want to creat a program&quot;,0dh,0ah<br>  byte &quot;so i try to exit this greet &quot;,0dh,0ah,0<br>;字符串声明<br><br>.data?  ;同样是声明变量的区域<br><br>.code ;程序代码区起始点 标记<br>main PROC ;程序入口<br>mov eax,0<br>mov ebx,5<br>mov ecx,7<br>call SumOf<br><br>INVOKE ExitProcess,0<br>main ENDP ;过程的结束<br>SumOf PROC ;类似于函数，通过call指令调用<br>add eax,ebx<br>add eax,ecx<br>ret<br>SumOf ENDP<br>END main ;程序的结束<br></code></pre></td></tr></table></figure><div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/02/25/pe01/">← Next PE结构详解</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/02/21/sortset/">排序Sort(代码与笔记) Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8A%B6%E6%80%81%E6%A0%87%E5%BF%97%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4"><span class="toc-number">1.</span> <span class="toc-text">状态标志操作指令</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%EF%BC%9A"><span class="toc-number">1.1.</span> <span class="toc-text">数据类型：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AE%80%E5%8D%95%E4%BC%A0%E9%80%81%E6%8C%87%E4%BB%A4"><span class="toc-number">1.2.</span> <span class="toc-text">简单传送指令</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8B%93%E5%B1%95%E4%BC%A0%E9%80%81%E6%8C%87%E4%BB%A4"><span class="toc-number"></span> <span class="toc-text">拓展传送指令</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AE%80%E5%8D%95%E5%8A%A0%E5%87%8F%E6%8C%87%E4%BB%A4"><span class="toc-number">0.1.</span> <span class="toc-text">简单加减指令</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E6%9D%A1%E4%BB%B6%E8%BD%AC%E7%A7%BB%E6%8C%87%E4%BB%A4"><span class="toc-number">0.2.</span> <span class="toc-text">常用条件转移指令</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A0%86%E6%A0%88%E5%92%8C%E5%A0%86%E6%A0%88%E6%93%8D%E4%BD%9C"><span class="toc-number">1.</span> <span class="toc-text">堆栈和堆栈操作</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%87%E7%A8%8B%E8%B0%83%E7%94%A8%E5%92%8C%E8%BF%94%E5%9B%9E%E6%8C%87%E4%BB%A4"><span class="toc-number"></span> <span class="toc-text">过程调用和返回指令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%BB%E8%BE%91%E8%BF%90%E7%AE%97%E6%8C%87%E4%BB%A4"><span class="toc-number"></span> <span class="toc-text">逻辑运算指令</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BE%AA%E7%8E%AF%E6%8C%87%E4%BB%A4"><span class="toc-number">1.</span> <span class="toc-text">循环指令</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>AVL树Insert与Delete函数分析（C++） | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>AVL树Insert与Delete函数分析（C++）</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-02-07T12:37:26.000Z" id="date"> 2021-02-07</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.985Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><h2 id="插入函数Insert"><a href="#插入函数Insert" class="headerlink" title="插入函数Insert"></a>插入函数Insert</h2><p>先放一下代码。因为是照着黑皮书《数据结构与算法分析》学的，所以代码大致和书上的一样，我并没有做太多修改。只是在理解原理的时候有些比较棘手的地方，所以在这里记笔记，方便以后查看。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">int max(int n1,int n2)<br>&#123;<br>if (n1 &gt;= n2)<br>return n1;<br>else<br>return n2;<br>&#125;<br>//取最大值<br> <br>static int Height(position P)<br>&#123;<br>if (P = NULL)<br>return -1;<br>else<br>return P-&gt;height;<br>&#125;<br>//获取高度//只是通过结构内定义的高度去取值，没有测算<br> <br>static position SingleRotateWithLeft(position K2)<br>&#123;<br>position K1;<br>K1 = K2-&gt;left;<br>K2-&gt;left = K1-&gt;right;<br>K1-&gt;right = K2;<br>K1-&gt;height = max(Height(K1-&gt;left), Height(K1-&gt;right)) + 1;<br>K2-&gt;height = max(Height(K2-&gt;left), Height(K2-&gt;right)) + 1;<br>return K1;<br>&#125;<br>//单旋转(左树旋转)<br> <br>static position DoubleRotateWithLeft(position K3)<br>&#123;<br>K3-&gt;left = SingleRotateWithRight(K3-&gt;left);<br>return SingleRotateWithLeft(K3);<br>&#125;<br>//双旋转(左树旋转)<br> <br>static position SingleRotateWithRight(position K1)<br>&#123;<br>position K2;<br>K2 = K1-&gt;right;<br>K1-&gt;right = K2-&gt;left;<br>K2-&gt;left = K1;<br>K1-&gt;height = max(Height(K1-&gt;left), Height(K1-&gt;right)) + 1;<br>K2-&gt;height = max(Height(K2-&gt;left), Height(K2-&gt;right)) + 1;<br>return K2;<br>&#125;<br>//单旋转(右树旋转)<br> <br>static position DoubleRotateWithRight(position K3)<br>&#123;<br>K3-&gt;right = SingleRotateWithLeft(K3-&gt;right);<br>return SingleRotateWithRight(K3);<br>&#125;<br>//双旋转(右树旋转)<br> <br>avltree insert(int X,avltree T)<br>&#123;<br>if (T == NULL)<br>&#123;<br>//T为空节点<br>T = new avlnode;//假定空间永远是足够的<br>T-&gt;height = 0;<br>T-&gt;left = T-&gt;right = NULL;<br>T-&gt;info = X;<br>&#125;<br>if (X &lt; T-&gt;info)<br>&#123;<br>T-&gt;left = insert(X, T-&gt;left);<br>if (Height(T-&gt;left) - Height(T-&gt;right) &gt;= 2)//事实上等于2才是最合适的<br>&#123;<br>if (X &lt; (T-&gt;left-&gt;info))<br>T = SingleRotateWithLeft(T);<br>else<br>T = DoubleRotateWithLeft(T);<br>&#125;<br>&#125;<br>else if (X &gt; T-&gt;info)<br>&#123;<br>T-&gt;right = insert(X, T-&gt;right);<br>if (Height(T-&gt;right) - Height(T-&gt;left) &gt;= 2)//事实上等于2才是最合适的<br>&#123;<br>if (X &gt; (T-&gt;right-&gt;info))<br>T = SingleRotateWithRight(T);<br>else<br>T = DoubleRotateWithRight(T);<br>&#125;<br>&#125;<br>T-&gt;height = max(Height(T-&gt;left), Height(T-&gt;right)) + 1;<br>return T;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果你也有这本书，并且已经看过这一部分关于avl的描述了，那么关于“什么是avl树”以及这些代码的作用至少是明白的，这里我主要是对书中所写的insert函数做些笔记。</p>
+<p>因为在树这一节中，很多地方都是通过递归来实现的，不得不承认这是一种非常巧妙的方法，但对于我这种小白来说，阅读和分析递归代码往往会转不过弯（其实更多时候是我懒得动笔，只在脑子里转了几十个循环，最后把自己绕懵了……）</p>
+<p>写在前面，书中的element我用int类型的info代替了，我觉得这样会更容易理解（虽然这样做其实也没什么意义就是了）。</p>
+<p>-——————————————————————————</p>
+<p><strong>Insert过程分析：</strong></p>
+<p>首先，这段函数的第一部分用来判断T节点是否存在。但我最开始还在奇怪，因为我们通常都是创建好了一颗空树，然后再进行插入节点的工作，而这里却要判断T节点是否为空。</p>
+<p>但可能是书上对这里的解释并不是那么清楚，这里我说一些自己的看法，如果有问题，欢迎指出。</p>
+<p>函数中的X代表的就是info，而T则应该输入我们要进行操作的树的根节点地址，毕竟我们也不清楚这个X应该放到树的什么地方。</p>
+<p>但值得注意的是，我们是在使用递归来实现这个功能，也就是说，在每一次递归循环中，T节点是不断改变的，它最终会找到我们要插入数据的实际位置，并在这个地方开辟出新的节点，这才是这段函数的作用。</p>
+<p>那么关键其实就在于寻址了。找到X应该放置的位置其实并不难，ADT树中也已经说过这种方法，但找到之后，却要按照AVL树的性质来存放数据。</p>
+<p>假设，我们通过函数递归，T参数已经来到了NULL的位置，于是这一次的递归中第一次开辟出了新节点。于是我们将新节点的地址返回到了上一次递归中（显然X&#x3D;T-&gt;info，所以其他判断都不起作用了）。</p>
+<p>不妨假设我们上一次是向左树去找，大概就是下面这样（没用鼠标垫，所以漂移的有点厉害……）：</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210202140118976.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210202140118976.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"></p>
+<p>所以这一次，T节点实际上是指K1。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T-&gt;left = insert(X, T-&gt;left);<br></code></pre></td></tr></table></figure>
+
+<p>而我们刚执行完这条函数，接下来判断K1节点是否打破了平衡状态。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">if (Height(T-&gt;left) - Height(T-&gt;right) &gt;= 2)//事实上等于2才是最合适的<br></code></pre></td></tr></table></figure>
+
+<p>（之所以会有这道注释，其实只是我的喜好罢了。因为如果在创建和修改二叉树的时候都有这样的操作，那么左树和右树的高度差值根本不可能超过2，因为一旦达到2就会被重新平衡，但我还是想这样写…..）</p>
+<p>假设我们这一次没有打破这个平衡，那么最终我们将会返回K1的地址。</p>
+<p>注：这里有个巧妙的地方，</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T-&gt;height = max(Height(T-&gt;left), Height(T-&gt;right)) + 1;<br></code></pre></td></tr></table></figure>
+
+<p>这段函数能够保证每一次插入节点的时候，都能为它获取高度。假设现在有一颗空树，我插入的第一个节点T1就获得了高度‘0’，而再次插入新节点T2的时候，T2的高度是‘0’，而这条代码获取了T2的高度又+1，变成了自己的高度，从而到达了高度‘1’。如果每个节点都通过这个函数来插入，那么深度自然就被设定好了。</p>
+<p>假设我们从上一次递归出来，回到了下图这个位置。本次递归中T代表了K3的地址。 </p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210202141230418.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210202141230418.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"></p>
+<p>现在，我们通过判断，发现K3打破了平衡状态，于是做了一个奇怪的判断：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">if (X &lt; (T-&gt;left-&gt;info))<br></code></pre></td></tr></table></figure>
+
+<p>函数在判断X是不是小于K1的关键值。</p>
+<p>如果判断为真，其实就说明K2会成为K1的左节点，那么就要进行左树单旋转操作。</p>
+<p>如果判断为假，说明K2是K1的右节点，那么就要进行左树的双旋转操作。</p>
+<p>（判断左树还是右树，其实是根据K1的位置判断。很简单，所以不再赘述）</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210202141956632.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210202141956632.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"></p>
+<p>旋转结束之后，返回了K1的地址（这个地址怎么来的，写在左树单旋转函数里了，该函数返回新根）。</p>
+<p>假设这一次是平衡的，那么大概会长上图这样了。</p>
+<p>最后就是把剩下的还没走完的递归流程走完就行了，这个过程中通常不会再有什么操作了，因为如果你每一次放入节点都用这个函数来操作，基本上都能保证当前的树是一颗正常的树，放入的新节点最多只能影响到它的‘祖父母辈’的平衡状态，只要把‘祖父母辈’的平衡修正回来，通常整棵树都会平衡。</p>
+<p>（这个结论是我自己猜测的，如果有错误欢迎指出）</p>
+<h2 id="删除函数Delete"><a href="#删除函数Delete" class="headerlink" title="删除函数Delete"></a>删除函数Delete</h2><p> 先放一下代码：（<strong>请注意注释</strong>。关于旋转函数，分析insert时贴出过，仅供参考。如果在某个地方没有理解，请先继续往下看一会，或许能找到答案。<strong>如果发现代码和解释有问题，请务必指出。</strong>）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">avltree deletenode(int X, avltree T)<br>&#123;<br>//X为删除目标的关键字值<br>//info为关键字值<br>position tmp;<br>if (T == NULL)<br>return NULL;<br>else if (X &lt; T-&gt;info)<br>&#123;<br>T-&gt;left=deletenode(X, T-&gt;left);<br>if (Height(T-&gt;right)-Height(T-&gt;left) &gt;= 2)//height函数用于返回节点所处的高度<br>&#123;<br>tmp = T-&gt;right;<br>if(Height(tmp-&gt;right)&gt;Height(tmp-&gt;left))<br>T = SingleRotateWithRight(T);//右树单旋转<br>else<br>T = DoubleRotateWithRight(T);//右树双旋转<br> <br>&#125;<br>&#125;<br>else if (X &gt; T-&gt;info)<br>&#123;<br>T-&gt;right=deletenode(X, T-&gt;right);<br>if (Height(T-&gt;left) - Height(T-&gt;right) &gt;= 2)<br>&#123;<br>tmp = T-&gt;left;<br>if (Height(tmp-&gt;left) &gt; Height(tmp-&gt;right))<br>T = SingleRotateWithLeft(T);//左树单旋转<br>else<br>T = DoubleRotateWithLeft(T);//左树双旋转<br>&#125;<br>&#125;<br>else<br>&#123;<br>if (T-&gt;left == NULL &amp;&amp; T-&gt;right == NULL)//若目标节点没有为叶子<br>&#123;<br>delete T;<br>return NULL;<br>&#125;<br>else if (T-&gt;right == NULL)//若目标节点只有左子树<br>&#123;<br>tmp = T-&gt;left;<br>delete T;<br>return tmp;<br>&#125;<br>else if (T-&gt;left==NULL)//若目标节点只有右子树<br>&#123;<br>tmp = T-&gt;right;<br>delete T;<br>return tmp;<br>&#125;<br>else//若目标节点左右都有子树<br>&#123;<br>if (Height(T-&gt;left) &gt; Height(T-&gt;right))<br>&#123;<br>tmp = findmax(T-&gt;left);//找出参数节点中最大的节点，返回地址<br>T-&gt;info = tmp-&gt;info;<br>T-&gt;left = deletenode(tmp-&gt;info,T-&gt;left);<br>&#125;<br>else<br>&#123;<br>tmp = findmin(T-&gt;right);//找出参数节点中最小的节点，返回地址<br>T-&gt;info = tmp-&gt;info;<br>T-&gt;right = deletenode(tmp-&gt;info, T-&gt;right);<br>&#125;<br>&#125;<br>&#125;<br>T-&gt;height = max(Height(T-&gt;left), Height(T-&gt;right)) + 1;<br>return T;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>前提条件：假设现在面对的是一颗完整正确的AVL树，而我们需要对其进行删除节点的操作。</strong></p>
+<p>主要思路是运用递归的方法来进行查找，向函数中输入目标节点的关键字以及根节点地址，进行查找。</p>
+<p>首先进入递归，函数通过这两条代码以及上面的 if条件语句 进行匹配关键字：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T-&gt;left=deletenode(X, T-&gt;left);<br>T-&gt;right=deletenode(X, T-&gt;right);<br></code></pre></td></tr></table></figure>
+
+<p>当我们成功找到了这个关键字所在的节点，进入本次递归，<strong>此时T节点代表了目标节点。(方便区分起见，我将每个目标节点T称之为T1节点)</strong></p>
+<p>于是进入了再往下的环节：判断该节点是否有子树。</p>
+<p><strong>情景一：（无子树）</strong></p>
+<p>假设该节点是叶，那么它既没有左子树也没有右子树，直接删除该节点，返回NULL值，回到了进入本次递归的函数位子，假设是这一段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T-&gt;right=deletenode(X, T-&gt;right);<br></code></pre></td></tr></table></figure>
+
+<p>那么，T1节点的父节点成功的将本该指向T1的指针指向了NULL，实现了最基础的 ‘叶删除’ 操作。</p>
+<p><strong>情景二&#x2F;情景三：（一个子树）</strong></p>
+<p>要么只有左子树，要么只有右子树，这是两个相近的情景，所以何在一起解释。</p>
+<p>在每一次的递归中，函数都会创建一个tmp指针用来储存可能必要的信息（你也可以对这个函数进行优化，毕竟不是每一轮递归都需要它，这或许能省下一部分空间）</p>
+<p>假设现在我们要删除的目标节点只有一个左子树：</p>
+<p>那么我们将tmp指向它左子树的第一个节点，并将这个地址返回，然后T1节点被删除。和情景一相同，它的父节点成功指向了返回值，也就是T1的左子树。</p>
+<p>然而需要注意的是，这是在AVL树中的实现。按照AVL树的性质，<strong>倘若一个节点没有右子树，那么它的左子树最多也只能有一个节点。所以每个节点对应的高度就有可能发生变化。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T-&gt;height = max(Height(T-&gt;left), Height(T-&gt;right)) + 1;<br></code></pre></td></tr></table></figure>
+
+<p>因为叶子仍然是叶子，高度仍然为 0 (假设叶子的高度均为0，当然，这只是假设罢了)，于是通过返回的递归右重新测算了改变高度的节点的高度。</p>
+<p>至此，删除节点被实现了。</p>
+<p><strong>情景四：(两个子树)</strong></p>
+<p>最麻烦也最难理解的部分(只是相对而言罢了)。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">if (Height(T-&gt;left) &gt; Height(T-&gt;right))<br></code></pre></td></tr></table></figure>
+
+<p>他判断了一下目标节点左树和右树哪个比较高，这里<strong>不妨先假设一下左树比较高</strong>的情景吧。</p>
+<p>函数令tmp指向了左树中最大的那个节点，并将该节点的关键字赋予T1节点(实际上是将tmp复制给T1)。</p>
+<p>然后进入下一轮递归</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T-&gt;left = deletenode(tmp-&gt;info,T-&gt;left);<br></code></pre></td></tr></table></figure>
+
+<p><strong>注意：这一次，查找的目标关键字变成了左树中最大的那个。</strong></p>
+<p>于是我们到达了第二个目标节点T2，并对它进行了删除(这是一个非常简单的删除方法，因为AVL性质规定了数值的大小，<strong>只要不停的向右走，走到没有右子树的时候，就能遇见这个最大值</strong>，所以这个<strong>T2节点一定没有右子树</strong>，情景和上面的一样)。</p>
+<p>而之所以要找左树中最大的值，是因为进行复制之后，并不会破坏AVL树在数值上的结构：<strong>节点左树中的所有值低于节点，右树中所有值高于节点。</strong></p>
+<p>最后测算高度，完成了删除节点的工作。</p>
+<p><strong>旋转判定：</strong></p>
+<p>以上工作只是完成了 ‘ 删除节点 ’ 这一项，但事实上，删除节点之后，还必须面临打破平衡条件的可能性。</p>
+<p>回到每一轮递归的入口：(本轮T节点将被称为T3)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T-&gt;left=deletenode(X, T-&gt;left);<br>if (Height(T-&gt;right)-Height(T-&gt;left) &gt;= 2)//height函数用于返回节点所处的高度&#123;<br>tmp = T-&gt;right;<br>if(Height(tmp-&gt;right)&gt;Height(tmp-&gt;left))<br>T = SingleRotateWithRight(T);//右树单旋转<br>else<br>T = DoubleRotateWithRight(T);//右树双旋转<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>当我们离开递归之后，必须进行判断是否打破了平衡条件(递归实现了高度的重新测算，这也是非常棒的地方) 。</p>
+<p>注：判断条件写了“右树-左树&gt;2”，而并没有包括“左树-右树”的情况。原因是因为：这个路口是指向左树的，也就是说，我们将在左树中删除某个节点。二叉树本身应该保持平衡，倘若现在左树被删除节点，那么左树就不可能比右树要高，所以只需要判断这一种情况即可。在向右查找的过程中也是如此。</p>
+<p>假设现在平衡被打破了。也就是说，右树比左树高了 2（其实高度差不可能超过 2 ，但我习惯写成 “&gt;&#x3D;” 罢了）。</p>
+<p>那么该轮tmp将指向T3的右子树第一个节点，然后判断究竟是那一边打破了平衡(必然是比较高的那一边打破平衡)。</p>
+<p>假设是tmp的左树更高，那么就需要进行双旋转，如图：（最开始想要删除的节点已经被删除了，造成了如下的情况出现）</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210205122849332.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210205122849332.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"></p>
+<p>注：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">T = DoubleRotateWithRight(T);//右树双旋转<br></code></pre></td></tr></table></figure>
+
+<p>这些旋转函数都将返回旋转之后的新根。</p>
+<p>其他情况也是相同，判断是否旋转，并判断应该选择哪一种旋转。</p>
+<p>且在每一轮的递归里，都重新计算了高度。</p>
+<p>至此，整个函数完成了删除节点的全部流程。</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/02/08/opencv-error/">← Next 记python2安装Opencv-python库报错解决方案</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/02/07/greymoose/">灰与鹿糜 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8F%92%E5%85%A5%E5%87%BD%E6%95%B0Insert"><span class="toc-number">1.</span> <span class="toc-text">插入函数Insert</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%A0%E9%99%A4%E5%87%BD%E6%95%B0Delete"><span class="toc-number">2.</span> <span class="toc-text">删除函数Delete</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

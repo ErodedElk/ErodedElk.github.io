@@ -1,0 +1,110 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>关于如何理解Glibc堆管理器(Ⅱ——Free与Bins) | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>关于如何理解Glibc堆管理器(Ⅱ——Free与Bins)</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-08-07T12:13:45.000Z" id="date"> 2021-08-07</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.992Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>​</p>
+<p>本篇实为个人笔记，可能存在些许错误；若各位师傅发现哪里存在错误，还望指正。感激不尽。</p>
+<p>若有图片及文稿引用，将在本篇结尾处著名来源。</p>
+<h2 id="Free与Bins："><a href="#Free与Bins：" class="headerlink" title="Free与Bins："></a><strong>Free与Bins：</strong></h2><p>        malloc如果一旦和free混用，情况就变得复杂了。我们可以先思考一下下面的问题：</p>
+<blockquote>
+<p>        如果只能malloc的话，那么内存最终必然会被消耗殆尽，因此free函数的存在是必须的。</p>
+<p>        假设我连续申明了A，B，C，D四个chunk，并且现在释放掉了B</p>
+<p>        倘若我现在需要申请一块刚好比B大16字节的chunk E，那么B就不能使用了，我们只能从C后面去找</p>
+<p>        又倘若这种情况非常多，那么就可能会有很多的内存被这样浪费掉了</p>
+<p>        如果我们现在又释放掉了C，那么E就能够从A和D之间申请了，但操作系统如果没有将B和C进行合并，那么就会以为是两块刚好不足的内存，我们仍然只能从D后面去找地方开辟空间，就会浪费更多的内存。</p>
+</blockquote>
+<p>        为了解决包括上述问题在内的诸多浪费问题，free有一套明确的策略(适用于教早的版本，与现代稍有出入，但思路是一致的)：</p>
+<p>1.如果Size中M位被标记，表明chunk由mmap分配，则直接将其归还给系统</p>
+<p>2.否则，如果该chunk的P位未标记，表明上一个chunk处于释放，向上合并成更大的chunk</p>
+<p>3.如果chunk的下一个chunk未被使用，则向下合并为更大的chunk</p>
+<p>4.如果chunk与Top Chunk相邻，就直接与其合并</p>
+<p>5.否则，放入适当的Bins中</p>
+<p>        现代堆管理器建立了一系列的Bins以储存不久前被释放的chunk，包括：<strong>SmallBin,LargeBin,UnsortedBin,FastBin,TcacheBin，</strong>前三种是最古老的版本，而后两种则是近代为了进一步优化效率而产生的，现在的管理器使用这五种来处理释放chunk的操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct malloc_chunk &#123;<br> <br>  INTERNAL_SIZE_T      mchunk_prev_size;  /* Size of previous chunk (if free).*/<br>  INTERNAL_SIZE_T      mchunk_size;       /* Size in bytes, including overhead.*/<br> <br>  struct malloc_chunk* fd;   /* double links -- used only if free. */<br>  struct malloc_chunk* bk;<br> <br>  /* Only used for large blocks: pointer to next larger size.  */<br>  struct malloc_chunk* fd_nextsize; /* double links -- used only if free. */<br>  struct malloc_chunk* bk_nextsize;<br> <br>&#125;;<br>//再次抄写以方便查阅<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/68ec66b1-6e1f-4767-ba27-cecd22778c20'><img src="blob:https://tokameine.top/68ec66b1-6e1f-4767-ba27-cecd22778c20"></p>
+<h3 id="SmallBin："><a href="#SmallBin：" class="headerlink" title="SmallBin："></a>SmallBin：</h3><p class='item-img' data-src='https://img-blog.csdnimg.cn/20210801134655587.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210801134655587.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/a4051139-e5a5-4345-a103-91c8bb2fcc2f"></p>
+<p>        SmallBin共有62个。在 32 位系统上，小于 512 字节（或在 64 位系统上小于 1024 字节）的每个块都有一个相应的小 bin。由于每个小 bin 仅存储一种大小的块，因此它们会自动排序 </p>
+<p>        这些块则通过显示链表相互连接，通过FD POINTER和BK POINTER形成双向链表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct malloc_chunk* fd;   /* double links -- used only if free. */<br>struct malloc_chunk* bk;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/7b010a35-5534-4d03-bf88-74298d03dded'><img src="blob:https://tokameine.top/7b010a35-5534-4d03-bf88-74298d03dded"></p>
+<p>        在上一章中介绍过chunk的结构体，其中非常驻的前两个成员则在chunk被释放后发挥作用</p>
+<p>        由于我们已经不会再使用这个chunk了，因此操作系统能够直接覆盖掉原本的数据来为该chunk建立两个指针，并将它<strong>挂进链表的头部(取出时也从头部取出)</strong></p>
+<h3 id="LargeBin："><a href="#LargeBin：" class="headerlink" title="LargeBin："></a>LargeBin：</h3><p class='item-img' data-src='https://img-blog.csdnimg.cn/20210801135402871.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210801135402871.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/a15b9fb6-7901-4b18-b730-d2c6a4066801"></p>
+<p>        总共63个。其存放的规则如图所示。由于它不像Small Bin那样每个Bin中只有固定大小的chunk，因此在Large Bin中会对chunk进行排序</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct malloc_chunk* fd;   /* double links -- used only if free. */<br>struct malloc_chunk* bk;<br> <br>/* Only used for large blocks: pointer to next larger size.  */<br>struct malloc_chunk* fd_nextsize; /* double links -- used only if free. */<br>struct malloc_chunk* bk_nextsize;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/22082418-92f7-40f6-894e-150ed105810d'><img src="blob:https://tokameine.top/22082418-92f7-40f6-894e-150ed105810d"></p>
+<p>        同时，在Large Bin中，最后两个指针也会发挥作用。</p>
+<p>        它们分别指向：<strong>下一个小于该大小的chunk</strong>和<strong>下一个大于该大小的chunk</strong></p>
+<p> <strong>且，最大的堆头的bk_nextsize指向最小的堆头；最小的堆头的fd_nextsize指向最大的堆头</strong></p>
+<p> <strong>例如：</strong>Bin 2中的第一个chunk的fd指针一个指向Bin 1中的第一个</p>
+<p>        (注：这两个指针仅对链表的头结点有意义，其他节点则没有这两个指针)</p>
+<h3 id="UnsortedBin："><a href="#UnsortedBin：" class="headerlink" title="UnsortedBin："></a>UnsortedBin：</h3><p class='item-img' data-src='https://img-blog.csdnimg.cn/20210801140752634.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210801140752634.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/5830e374-2eea-46be-aab7-7805916ad314"></p>
+<p>         结构如图，只有一个。其由来的解释摘抄自下文：</p>
+<blockquote>
+<p>The heap manager improves this basic algorithm one step further using an optimizing cache layer called the “unsorted bin”. This optimization is based on the observation that often frees are clustered together, and frees are often immediately followed by allocations of similarly sized chunks. For example, a program releasing a tree or a list will often release many allocations for every entry all at once, and a program updating an entry in a list might release the previous entry before allocating space for its replacement.</p>
+</blockquote>
+<p>        大致意思就是：用户常常在释放资源后立刻由进行了一系列分配(比方说二叉树之类的，其更新需要释放又申请)，如果立刻讲这些chunk放进Small Bin或者Large Bin，那上述情况的开销就会过大，延缓程序运行。因此程序会先从这个Bin中去寻找合适的chunk返回，如果没有合适的，才去其他Bins中寻找，如果还是没找到，那才会采取其他方式</p>
+<p>        这个链表是不进行排序的。在这个Bin中，堆管理器会立刻合并在<strong>物理地址上相邻的chunk。</strong>在malloc的时候会优先(如果大小较小，则可能先从Fast Bin开始)遍历这个Bin去找合适的内存地址</p>
+<p>        需要注意的是，malloc从该Bin中获取chunk的途径是 切割该Bin中已有的chunk，将足够大的空间返回给用户，而剩下的空间仍然保存在该Bin中，直到触发特定条件(当其无法满足malloc的申请，就会将所有内容放入合适的Bins中)</p>
+<p>        （注：先进先出）</p>
+<h3 id="Fast-Bin："><a href="#Fast-Bin：" class="headerlink" title="Fast Bin："></a>Fast Bin：</h3><p class='item-img' data-src='https://img-blog.csdnimg.cn/20210801141620974.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210801141620974.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/f94b7df6-a41e-40d8-a0fc-28f5b8a755cc"></p>
+<p>        总共10个，均为单向链表，涵盖大小为 16、24、32、40、48、56、64、72、80 和 88 字节的chunk，同样不需要额外的排序操作。</p>
+<p>        但特殊的是，被放入这里的chunk并不会被标记为“未被利用”，即下一个chunk的P位不会被置零，这种表现像是还未被释放一样。</p>
+<blockquote>
+<p>The downside of fastbins, of course, is that fastbin chunks are not “truly” freed or merged, and this would eventually cause the memory of the process to fragment and balloon over time. To resolve this, heap manager periodically “<a target="_blank" rel="noopener" href="https://sourceware.org/git/gitweb.cgi?p=glibc.git;a=blob;f=malloc/malloc.c;h=6e766d11bc85b6480fa5c9f2a76559f8acf9deb5;hb=HEAD#l4448">consolidates</a>” the heap. This “flushes” each entry in the fast bin by “actually freeing” it, i.e., merging it with adjacent free chunks, and placing the resulting free chunks onto the unsorted bin for malloc to later use.</p>
+</blockquote>
+<p>         大致意思为：堆管理器会<strong>定期</strong>整理这个Bin，将其合并后投放到合适的Bin中</p>
+<blockquote>
+<p>This “consolidation” stage occurs whenever a <em>malloc</em> request is made that is larger than a <em>fastbin</em> can service (i.e., for chunks <a target="_blank" rel="noopener" href="https://sourceware.org/git/gitweb.cgi?p=glibc.git;a=blob;f=malloc/malloc.c;h=6e766d11bc85b6480fa5c9f2a76559f8acf9deb5;hb=HEAD#l3696">over 512 bytes</a> or 1024 bytes on 64-bit), when <a target="_blank" rel="noopener" href="https://sourceware.org/git/gitweb.cgi?p=glibc.git;a=blob;f=malloc/malloc.c;h=6e766d11bc85b6480fa5c9f2a76559f8acf9deb5;hb=HEAD#l1592">freeing any chunk over 64KB</a> (where 64KB is a heuristically chosen value), or when <a target="_blank" rel="noopener" href="http://man7.org/linux/man-pages/man3/mallopt.3.html">malloc_trim</a> or <a target="_blank" rel="noopener" href="http://man7.org/linux/man-pages/man3/mallopt.3.html">mallopt</a> are called by the program.</p>
+</blockquote>
+<p>        当释放超过64 KB 的任何块时</p>
+<p>        每当发出大于fastbin可以服务的malloc请求时</p>
+<p>        程序调用malloc_trim或mallopt时</p>
+<p>        满足上述三种情况中任意一种，都会触发合并操作</p>
+<h3 id="TcacheBin："><a href="#TcacheBin：" class="headerlink" title="TcacheBin："></a>TcacheBin：</h3><p class='item-img' data-src='https://img-blog.csdnimg.cn/20210801142316915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210801142316915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/f8c3d73f-da60-4037-95c0-986d5b467564"></p>
+<p>         在libc-2.23版本中还未创建这个结构，其主要目的是解决<strong>一个进程下多个线程对堆进行的异步操作问题</strong>而设计，由于这已经超出了本章内容，因此在这里不做特别说明，具体内容将放在第七章介绍</p>
+<h3 id="额外说明："><a href="#额外说明：" class="headerlink" title="额外说明："></a>额外说明：</h3><p>        Bins这一系列结构在底层的实现表现为一整个数组</p>
+<p>        数组的第一个元素指向Unsorted Bin</p>
+<p>        第二个到第六十三个则为Small Bin，以此类推，大致如下图：</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/2021080114284090.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/2021080114284090.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/0b502c11-190d-4fda-a009-6685f2913c19"></p>
+<p>        在gdb调试中可以通过bins查看到当前的Bins结构 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">db-peda$ bins<br>fastbins<br>0x20: 0x0<br>0x30: 0x0<br>0x40: 0x0<br>0x50: 0x0<br>0x60: 0x0<br>0x70: 0x0<br>0x80: 0x0<br>unsortedbin<br>all: 0x0<br>smallbins<br>empty<br>largebins<br>empty<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/59211bb3-8a71-453d-817e-83a1925473fd'><img src="blob:https://tokameine.top/59211bb3-8a71-453d-817e-83a1925473fd"></p>
+<p>参考文章：</p>
+<p><a target="_blank" rel="noopener" href="https://nightrainy.github.io/2019/05/06/glic%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/#bins">https://nightrainy.github.io/2019/05/06/glic%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/#bins</a></p>
+<p><a target="_blank" rel="noopener" href="https://azeria-labs.com/heap-exploitation-part-2-glibc-heap-free-bins/">https://azeria-labs.com/heap-exploitation-part-2-glibc-heap-free-bins/</a> ​</p>
+<p>插画ID：90945914</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/08/07/glibc-3/">← Next 关于如何理解Glibc堆管理器(Ⅲ——从DoubleFree深入理解Bins)</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/08/07/glibc-1/">关于如何理解Glibc堆管理器(Ⅰ——堆结构) Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Free%E4%B8%8EBins%EF%BC%9A"><span class="toc-number">1.</span> <span class="toc-text">Free与Bins：</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SmallBin%EF%BC%9A"><span class="toc-number">1.1.</span> <span class="toc-text">SmallBin：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#LargeBin%EF%BC%9A"><span class="toc-number">1.2.</span> <span class="toc-text">LargeBin：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#UnsortedBin%EF%BC%9A"><span class="toc-number">1.3.</span> <span class="toc-text">UnsortedBin：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Fast-Bin%EF%BC%9A"><span class="toc-number">1.4.</span> <span class="toc-text">Fast Bin：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TcacheBin%EF%BC%9A"><span class="toc-number">1.5.</span> <span class="toc-text">TcacheBin：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%9D%E5%A4%96%E8%AF%B4%E6%98%8E%EF%BC%9A"><span class="toc-number">1.6.</span> <span class="toc-text">额外说明：</span></a></li></ol></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

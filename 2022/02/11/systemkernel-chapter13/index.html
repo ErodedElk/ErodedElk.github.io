@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>《操作系统真象还原》chapter13 笔记与整理 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>《操作系统真象还原》chapter13 笔记与整理</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-02-10T17:16:43.000Z" id="date"> 2022-02-11</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.014Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><hr>
+<p>不太好用比较好看的格式来说明这章的内容，就我个人的感受来说，主要是科普了一下计算机和硬盘是如何交互的，顺便对外部设备的驱动编写有了一点比较模糊的认识。</p>
+<h3 id="名次解释"><a href="#名次解释" class="headerlink" title="名次解释"></a>名次解释</h3><p>首先是关于硬盘的几个名词解释：</p>
+<ul>
+<li>盘面：磁盘上的任何一面都能称之为盘面</li>
+<li>柱面：将多个磁盘叠在一起，相同磁道号构成的圆柱面</li>
+<li>磁头：用于读写磁盘的设备，一个磁盘上下两面各有一个</li>
+<li>磁道：任何一个磁盘上用于储存数据的带磁同心圆</li>
+<li>分区：认为界定一个磁盘各个区域的名词</li>
+<li>扇区：标准扇区512字节，每个磁道由多个扇区构成</li>
+</ul>
+<p>反正具体的样貌大概都能搜出来，名次解释并没有太大意义，这里写出来是为了让文章看起来比较舒服。</p>
+<p>另外还需要记录一点，有关磁盘储存数据的方式：</p>
+<ul>
+<li>每个主盘的第一个磁道用于存放MBR，而MBR只占用一个扇区，多余扇区往往不使用。一个磁道一般63个扇区(过去是这样，现在更多更大了，但出于向前兼容的缘故，应该认为每个磁道的扇区数相同)</li>
+<li>第一个扇区除了MBR外还需要存放64字节的分区表，分区表记录整块磁盘的分区数据</li>
+</ul>
+<p>不过现代硬盘为了支持更多的分区(早期只支持4个主分区)，引申出了逻辑分区的概念。将硬盘分为<strong>3个主分区和一个逻辑分区</strong>。</p>
+<p>逻辑分区是理论上可以无限被分割的分区，它为从自身再分配出去的每个分区单独赋予一张分区表，每张分区表通过<strong>隐式链接</strong>的方法可以追溯到下一个分区。</p>
+<p>每个分区的第一个磁道都是引导记录，只是第一个分区的叫做MBR(Main Boot Record)，其他的都叫做EBR(Extended Boot Record)。而每个分区的第二个磁道开始还放了一个OBR(OS Boot Record)。EBR和MBR是完全一样的结构，只是在名字上做了区别；而OBR则不同于MBR，它就是普通的存放在磁道上的数据而已，用于完成操作系统的自举。</p>
+<p>分区表条目如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct partition_table_entry &#123;<br>   uint8_t  bootable;         // 是否可引导    <br>   uint8_t  start_head;         // 起始磁头号<br>   uint8_t  start_sec;         // 起始扇区号<br>   uint8_t  start_chs;         // 起始柱面号<br>   uint8_t  fs_type;         // 分区类型<br>   uint8_t  end_head;         // 结束磁头号<br>   uint8_t  end_sec;         // 结束扇区号<br>   uint8_t  end_chs;         // 结束柱面号<br>   uint32_t start_lba;         // 本分区起始扇区的lba地址<br>   uint32_t sec_cnt;         // 本分区的扇区数目<br>&#125; __attribute__ ((packed));     // 保证此结构是16字节大小<br></code></pre></td></tr></table></figure>
+
+<p>主要通过<strong>start_lba+sec_cnt*512</strong>来实现下一个分区的寻址，所以叫隐式链接。</p>
+<p>本书有一张非常形象的图用以解释这个方法，不过因为我懒得拍一张下来，有兴趣的师傅可以去翻翻看，P577-图13-23。</p>
+<h3 id="IDE通道实现"><a href="#IDE通道实现" class="headerlink" title="IDE通道实现"></a>IDE通道实现</h3><p>操作系统和硬盘的交互主要是走IDE(Integrated Drive Electronics)通道，个人目前对IDE的认知是一套由操作系统实现的驱动接口。所以实现硬盘驱动就是在写IDE。</p>
+<p>不过作者在本章才实现thread_yield，让这章的结构看起来有些混乱(虽然这似乎看起来是顺理成章的事情)，所以关于thread_yield和idle的内容会放在本片笔记的结尾。</p>
+<p>首先是关于操作系统如何与硬盘进行交互的内容：</p>
+<ul>
+<li>BIOS在启动之初就会像磁盘写入一系列数据，其中硬盘数量被写在0x475地址处</li>
+<li>和之前的8259A芯片等设备相同，硬盘也提供了一些寄存器用以让操作系统向其发送指令，包括IDENTIFY、READ_SECTOR、WRITE_SECTOR三个指令。</li>
+<li>操作系统向对应的寄存器中写入硬盘编号、起始偏移、所需扇区数后，待硬盘完成对应的寻址和返回操作以后，便能够从固定的端口读出硬盘数据</li>
+<li>另外IDENTIFY指令发送后，硬盘会返回一系列有关硬盘本身的信息，可以用它们来构建整个硬盘的分区结构</li>
+<li>硬盘也分主盘和从盘，在发送指令的时候需要指定发送的目标硬盘。当硬盘完成任务以后会触发8259A芯片上的IRQ14和IRQ15中断响应处理器</li>
+</ul>
+<p>更加具体的操作直接看代码和注释吧。</p>
+<p>init_ide：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">/* 硬盘数据结构初始化 */<br>void ide_init() &#123;<br>   uint8_t hd_cnt = *((uint8_t*)(0x475));// 获取硬盘的数量<br>   list_init(&amp;partition_list);<br>   channel_cnt = DIV_ROUND_UP(hd_cnt, 2);       // 一个ide通道上有两个硬盘,根据硬盘数量反推有几个ide通道<br>   struct ide_channel* channel;<br>   uint8_t channel_no = 0, dev_no = 0; <br><br>   /* 处理每个通道上的硬盘 */<br>   while (channel_no &lt; channel_cnt) &#123;<br>      channel = &amp;channels[channel_no];<br>      sprintf(channel-&gt;name, &quot;ide%d&quot;, channel_no);<br><br>      /* 为每个ide通道初始化端口基址及中断向量 */<br>      switch (channel_no) &#123;<br>     case 0:<br>        channel-&gt;port_base     = 0x1f0;       // ide0通道的起始端口号是0x1f0<br>        channel-&gt;irq_no     = 0x20 + 14;       // 从片8259a上倒数第二的中断引脚,温盘,也就是ide0通道的的中断向量号<br>        break;<br>     case 1:<br>        channel-&gt;port_base     = 0x170;       // ide1通道的起始端口号是0x170<br>        channel-&gt;irq_no     = 0x20 + 15;       // 从8259A上的最后一个中断引脚,我们用来响应ide1通道上的硬盘中断<br>        break;<br>      &#125;<br><br>      channel-&gt;expecting_intr = false;           // 未向硬盘写入指令时不期待硬盘的中断<br>      lock_init(&amp;channel-&gt;lock);             <br><br>   /* 初始化为0,目的是向硬盘控制器请求数据后,硬盘驱动sema_down此信号量会阻塞线程,<br>   直到硬盘完成后通过发中断,由中断处理程序将此信号量sema_up,唤醒线程. */<br>      sema_init(&amp;channel-&gt;disk_done, 0);<br><br>      register_handler(channel-&gt;irq_no, intr_hd_handler);<br><br>      /* 分别获取两个硬盘的参数及分区信息 */<br>      while (dev_no &lt; 2) &#123;<br>     struct disk* hd = &amp;channel-&gt;devices[dev_no];<br>     hd-&gt;my_channel = channel;<br>     hd-&gt;dev_no = dev_no;<br>     sprintf(hd-&gt;name, &quot;sd%c&quot;, &#x27;a&#x27; + channel_no * 2 + dev_no);<br>     identify_disk(hd);     // 获取硬盘参数<br>     if (dev_no != 0) &#123;     // 内核本身的裸硬盘(hd60M.img)不处理<br>        partition_scan(hd, 0);  // 扫描该硬盘上的分区  <br>     &#125;<br>     p_no = 0, l_no = 0;<br>     dev_no++; <br>      &#125;<br>      dev_no = 0;                     // 将硬盘驱动器号置0,为下一个channel的两个硬盘初始化。<br>      channel_no++;                   // 下一个channel<br>   &#125;<br><br>   printk(&quot;\n   all partition info\n&quot;);<br>   /* 打印所有分区信息 */<br>   list_traversal(&amp;partition_list, partition_info, (int)NULL);<br>   printk(&quot;ide_init done\n&quot;);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>过程并不复杂，根据注释大概就能理解过程了，细节参考一下本书代码中的结构体和讲解应该不难理解。</p>
+<p>该函数主要是完成两个ide通道的初始化，让之后读取能够顺利进行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">/* ata通道结构 */<br>struct ide_channel &#123;<br>   char name[8];         // 本ata通道名称, 如ata0,也被叫做ide0. 可以参考bochs配置文件中关于硬盘的配置。<br>   uint16_t port_base;         // 本通道的起始端口号<br>   uint8_t irq_no;         // 本通道所用的中断号<br>   struct lock lock;<br>   bool expecting_intr;         // 向硬盘发完命令后等待来自硬盘的中断<br>   struct semaphore disk_done;     // 硬盘处理完成.线程用这个信号量来阻塞自己，由硬盘完成后产生的中断将线程唤醒<br>   struct disk devices[2];     // 一个通道上连接两个硬盘，一主一从<br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p>identify_disk就是发送identify指令并获取硬盘信息，而partition_scan负责扫描该磁盘，并向hd中填入数据(换个说法吧，partition_scan会开始扫描磁盘，通过磁盘里每个MBR和EBR的分区表来初始化hd指针指向的结构体)。</p>
+<p>select_disk：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">static void select_disk(struct disk* hd) &#123;<br>   uint8_t reg_device = BIT_DEV_MBS  BIT_DEV_LBA;<br>   if (hd-&gt;dev_no == 1) &#123;    // 若是从盘就置DEV位为1<br>      reg_device = BIT_DEV_DEV;<br>   &#125;<br>   outb(reg_dev(hd-&gt;my_channel), reg_device);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>写入硬盘寄存器，表示需要访问对应的磁盘</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">static void select_sector(struct disk* hd, uint32_t lba, uint8_t sec_cnt) &#123;<br>   struct ide_channel* channel = hd-&gt;my_channel;<br>   outb(reg_sect_cnt(channel), sec_cnt);     // 如果sec_cnt为0,则表示写入256个扇区<br>   outb(reg_lba_l(channel), lba);         // lba地址的低8位,不用单独取出低8位.outb函数中的汇编指令outb %b0, %w1会只用al。<br>   outb(reg_lba_m(channel), lba &gt;&gt; 8);         // lba地址的8~15位<br>   outb(reg_lba_h(channel), lba &gt;&gt; 16);         // lba地址的16~23位<br>   /* 因为lba地址的24~27位要存储在device寄存器的0～3位,<br>    * 无法单独写入这4位,所以在此处把device寄存器再重新写入一次*/<br>   outb(reg_dev(channel), BIT_DEV_MBS  BIT_DEV_LBA  (hd-&gt;dev_no == 1 ? BIT_DEV_DEV : 0)  lba &gt;&gt; 24);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>同理，将需要写的扇区起始地址和需要访问的扇区数写入对应的寄存器。</p>
+<p>完成之后，再向硬盘发送read指令然后挂起进程陷入沉睡，等待硬盘响应(发起中断)后，告诉硬盘可以继续发出中断后，从固定端口读写数据即可。</p>
+<p>中断处理函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void intr_hd_handler(uint8_t irq_no) &#123;<br>   ASSERT(irq_no == 0x2e  irq_no == 0x2f);<br>   uint8_t ch_no = irq_no - 0x2e;<br>   struct ide_channel* channel = &amp;channels[ch_no];<br>   ASSERT(channel-&gt;irq_no == irq_no);<br>/* 不必担心此中断是否对应的是这一次的expecting_intr,<br> * 每次读写硬盘时会申请锁,从而保证了同步一致性 */<br>   if (channel-&gt;expecting_intr) &#123;<br>      channel-&gt;expecting_intr = false;<br>      sema_up(&amp;channel-&gt;disk_done);<br><br>/* 读取状态寄存器使硬盘控制器认为此次的中断已被处理,<br> * 从而硬盘可以继续执行新的读写 */<br>      inb(reg_status(channel));<br>   &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="线程调度"><a href="#线程调度" class="headerlink" title="线程调度"></a>线程调度</h3><p>最后是有关线程调度的新内容，首先是主动挂起：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void thread_yield(void) &#123;<br>   struct task_struct* cur = running_thread();   <br>   enum intr_status old_status = intr_disable();<br>   ASSERT(!elem_find(&amp;thread_ready_list, &amp;cur-&gt;general_tag));<br>   list_append(&amp;thread_ready_list, &amp;cur-&gt;general_tag);<br>   cur-&gt;status = TASK_READY;<br>   schedule();<br>   intr_set_status(old_status);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>就是简单的把自己设为ready状态并挂进等待队列而已。</p>
+<p>另外一个是在调度队列中没有可调度的线程时，让调度器不至于出错而设定的线程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">/* 系统空闲时运行的线程 */<br>static void idle(void* arg UNUSED) &#123;<br>   while(1) &#123;<br>      thread_block(TASK_BLOCKED);     <br>      //执行hlt时必须要保证目前处在开中断的情况下<br>      asm volatile (&quot;sti; hlt&quot; : : : &quot;memory&quot;);<br>   &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>hlt指令是让处理器停止运行，直到遇到中断为止。</p>
+<p>初始化时会主动创建该线程并将其阻塞。当调度器在调度队列中找不到可调度的线程时，会主动唤醒该线程，该线程会手动阻塞自己并等待下一次中断发生。</p>
+<hr>
+<p>插画ID：91443649</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/02/25/tqlctf-re-pwn/">← Next TQLCTF-RE/PWN复现报告</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/02/11/systemkernel-chapter12/">《操作系统真象还原》chapter12 笔记与思考 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%8D%E6%AC%A1%E8%A7%A3%E9%87%8A"><span class="toc-number">1.</span> <span class="toc-text">名次解释</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#IDE%E9%80%9A%E9%81%93%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">IDE通道实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B%E8%B0%83%E5%BA%A6"><span class="toc-number">3.</span> <span class="toc-text">线程调度</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

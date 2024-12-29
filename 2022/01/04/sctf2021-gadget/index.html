@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SCTF2021——gadget报告 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>SCTF2021——gadget报告</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-01-04T11:23:28.000Z" id="date"> 2022-01-04</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.007Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p><strong>关键点总结：</strong></p>
+<p>1.架构切换(retf与retfq与ret)</p>
+<p>2.侧信道攻击</p>
+<p><strong>首先应该认识到：</strong></p>
+<p><strong>retn</strong>与retf这两条指令的区别 以及 <strong>64位机器是如何执行32位程序的</strong></p>
+<p>retn(return near)近跳转，等同于 <strong>pop ip</strong></p>
+<p>retf(return far)远跳转，等同于 <strong>pop ip;pop</strong> CS</p>
+<p><strong>CS</strong>指的是**段寄存器(Code-Segment Register)**，在早期80386时代，它本用于地址拓展，但如今64位的系统下，该寄存器的内容已经和那个时代完全不同了。</p>
+<p>现代的CS寄存器中用于存放 **数据段选择子(Code-Segment Descriptors)**，如下为其格式：</p>
+<p class='item-img' data-src='https://cdn.jsdelivr.net/gh/ErodedElk/blogPic/img/202201041856259.png'><img src="https://cdn.jsdelivr.net/gh/ErodedElk/blogPic/img/202201041856259.png"></p>
+<p>本文不再赘述其含义，我们主要关心该选择子的 D 标志位，它用以区分程序应该运行在32位还是64位架构上</p>
+<p>因此，如果D标志位被置1，则表示程序应该运行在64位，反之则为32位(请注意，这个说法并不严谨，因为它们的差别不只是一个bit而已，但本文出于便于理解的目的如此称呼，为避免误导，特此提醒)</p>
+<p>很多师傅的Writeup中写道：</p>
+<blockquote>
+<p>cs寄存器中0x23表示32位运行模式，0x33表示64位运行模式</p>
+</blockquote>
+<p>实际上，它们只有一个bit的差别而已，0x23:10 0011 ; 0x33:11 0011</p>
+<p>高两位是GDT的索引，具体对应到GDT中，其上的D位各不相同，因此导致了运行模式的差异</p>
+<p>另外需要提到的一点是，一部分师傅在WP里会这样写：</p>
+<blockquote>
+<p><strong>使用retf切换到32位，retfq再回到64位</strong></p>
+</blockquote>
+<p>但这二者实际上没有区别，不必多此一举，则一即可。但笔者在查阅资料的时候，并没有发现哪份文档写到retfq指令，猜测是由于AT&amp;T语法的关系吧</p>
+<p><strong>题目利用思路：</strong></p>
+<p>仅有调用号0与5可用。但在32位下，0对于open；在64位下，5对应read。因此我们能够将flag读进内存。</p>
+<p>接下来将flag与我们猜测的内容进行比较，如果猜对，那么程序就跳转至死循环处，最终因为超时而down；否则就直接退出。猜测方式很多，较为易懂的是利用sub+jz来实现相等跳转</p>
+<p>EXP：</p>
+<p>（有时间再补）</p>
+<p>参考文章：</p>
+<p><a target="_blank" rel="noopener" href="https://m-ouse.github.io/post/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3wow64-I/">https://m-ouse.github.io/post/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3wow64-I/</a></p>
+<p><a target="_blank" rel="noopener" href="https://reverseengineering.stackexchange.com/questions/2006/how-are-the-segment-registers-fs-gs-cs-ss-ds-es-used-in-linux">https://reverseengineering.stackexchange.com/questions/2006/how-are-the-segment-registers-fs-gs-cs-ss-ds-es-used-in-linux</a></p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/21165678/why-64-bit-mode-long-mode-doesnt-use-segment-registers">https://stackoverflow.com/questions/21165678/why-64-bit-mode-long-mode-doesnt-use-segment-registers</a></p>
+<p>Mark：<a target="_blank" rel="noopener" href="http://liupzmin.com/2021/06/27/theory/stack-insight-01-md/">http://liupzmin.com/2021/06/27/theory/stack-insight-01-md/</a></p>
+<p>对我来说算是个冷知识：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/63975447/why-virtual-address-are-48-bits-not-64-bits">https://stackoverflow.com/questions/63975447/why-virtual-address-are-48-bits-not-64-bits</a></p>
+<p>插画ID : 93869785</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/01/13/systemkernel-chapter1-5/">← Next 《操作系统真象还原》chapter1-5笔记与总结</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/12/13/kernel-pwn1/">Kernel Pwn环境搭建 可能遇到的问题 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

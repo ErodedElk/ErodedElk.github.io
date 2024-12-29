@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>《操作系统真象还原》chapter9 笔记与注意 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>《操作系统真象还原》chapter9 笔记与注意</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2022-02-06T11:12:32.000Z" id="date"> 2022-02-06</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.016Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><hr>
+<h3 id="PART-1"><a href="#PART-1" class="headerlink" title="PART 1"></a>PART 1</h3><ul>
+<li>问：进程和线程的关系是什么？</li>
+<li>答：进程&#x3D;线程+资源</li>
+</ul>
+<p>    本书第一节用非常冗长的语言描述这个问题。但总而言之归纳几点就是：</p>
+<ul>
+<li>线程是操作系统调度的基本单位</li>
+<li>进程&#x3D;线程+资源</li>
+<li>线程是一个 <strong>“执行流”</strong> 概念，不需要过多去解读这个词语。</li>
+<li>出于上面一点，能将所有程序分为 <strong>“单线程进程”</strong> 和 <strong>“多线程进程”</strong>。即普通的未使用线程功能的程序也能算作 <strong>“单线程进程”</strong></li>
+<li>Linux系统下称进程为 <strong>“任务”(Task)</strong> ，但进程和线程是概念性的事物，而任务是实现上的结果，不需要过度去在意其称呼。</li>
+<li>Linux下的线程实现来自于POSIX线程库，自Linux2.6以后，因为NPTL的成功，该方案支持的线程的内核级的。只有一些古老的版本会有用户级线程</li>
+</ul>
+<blockquote>
+<p>本节也提到了所谓 <strong>“上下文”</strong> 的概念：程序代码执行所依赖的 <strong>寄存器映像</strong> 和 <strong>内存资源</strong>。后者一般指的是堆和栈。</p>
+</blockquote>
+<hr>
+<h3 id="PART-2"><a href="#PART-2" class="headerlink" title="PART 2"></a>PART 2</h3><p>    本章后半部分笔者曾在《深入Linux内核架构》中了解到些许，但对其实现十分费解，这次算是对实现也清楚一些了。但本章还留有一些问题，本书作者表示会在chapter 10解决它，但我目前还不清楚我遇到的问题是不是就是作者所说的，或许有一点偏差，但具体还要等笔者看完第十章再做评价。</p>
+<p>    首先是Linux架构里所用的“任务”PCB：（注释就不删了，个人觉得还对本章掌握的有点模糊，留着以后有问题了再看）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct task_struct &#123;<br>   uint32_t* self_kstack;     // 各内核线程都用自己的内核栈<br>   enum task_status status;<br>   char name[16];<br>   uint8_t priority;<br>   uint8_t ticks;       // 每次在处理器上执行的时间嘀嗒数<br><br>/* 此任务自上cpu运行后至今占用了多少cpu嘀嗒数,<br> * 也就是此任务执行了多久*/<br>   uint32_t elapsed_ticks;<br><br>/* general_tag的作用是用于线程在一般的队列中的结点 */<br>   struct list_elem general_tag;                    <br><br>/* all_list_tag的作用是用于线程队列thread_all_list中的结点 */<br>   struct list_elem all_list_tag;<br><br>   uint32_t* pgdir;              // 进程自己页表的虚拟地址<br>   uint32_t stack_magic;     // 边界标记,用于检测栈的溢出<br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p>    内核为支持多任务需要自己维护一张链表来让任务间能够切换。以PCB中的ticks代表时间片，每次时钟中断时将消减当前PCB中的时间片，在为0时进行一次调度（此前需要先关闭中断，以防止调度器被自己调度）。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void schedule() &#123;<br>   ASSERT(intr_get_status() == INTR_OFF);<br>   struct task_struct* cur = running_thread(); <br>   if (cur-&gt;status == TASK_RUNNING) &#123;<br>      ASSERT(!elem_find(&amp;thread_ready_list, &amp;cur-&gt;general_tag));<br>      list_append(&amp;thread_ready_list, &amp;cur-&gt;general_tag);<br>      cur-&gt;ticks = cur-&gt;priority;<br>      cur-&gt;status = TASK_READY;<br>   &#125; else &#123; <br>   &#125;<br><br>   ASSERT(!list_empty(&amp;thread_ready_list));<br>   thread_tag = NULL;      // thread_tag清空<br>/* 将thread_ready_list队列中的第一个就绪线程弹出,准备将其调度上cpu. */<br>   thread_tag = list_pop(&amp;thread_ready_list);   <br>   struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);<br>   next-&gt;status = TASK_RUNNING;<br>   switch_to(cur, next);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">switch_to:<br>   ;栈中此处是返回地址           <br>   push esi<br>   push edi<br>   push ebx<br>   push ebp<br><br>   mov eax, [esp + 20]         ; 得到栈中的参数cur, cur = [esp+20]<br>   mov [eax], esp                ; 保存栈顶指针esp. task_struct的self_kstack字段,<br>                 ; self_kstack在task_struct中的偏移为0,<br>                 ; 所以直接往thread开头处存4字节便可。<br>;------------------  以上是备份当前线程的环境，下面是恢复下一个线程的环境  ----------------<br>   mov eax, [esp + 24]         ; 得到栈中的参数next, next = [esp+24]<br>   mov esp, [eax]         ; pcb的第一个成员是self_kstack成员,用来记录0级栈顶指针,<br>                 ; 用来上cpu时恢复0级栈,0级栈中保存了进程或线程所有信息,包括3级栈指针<br>   pop ebp<br>   pop ebx<br>   pop edi<br>   pop esi<br>   ret                 ; 返回到上面switch_to下面的那句注释的返回地址,<br>                 ; 未由中断进入,第一次执行时会返回到kernel_thread<br></code></pre></td></tr></table></figure>
+
+<p>    调度函数中用作切换的switch_to是由汇编语言编写的。其过程为：</p>
+<blockquote>
+<p>保存现场 &gt; 切换栈帧 &gt; 恢复现场 &gt; 返回线程</p>
+</blockquote>
+<p>    之所以ret对应了返回地址，是因为上一个线程在被调度时调用了schedule将自身保存在自己的栈中，在切换回原本的栈帧以后便能够重新恢复。</p>
+<blockquote>
+<p>注：kernel_thread中会先打开中断，然后跳转到对应线程。</p>
+</blockquote>
+<p>    不过因为内核自己也是一个进程，所以在开始调度之前应该先为内核本身生成PCB：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">static void make_main_thread(void) &#123;<br>   main_thread = running_thread();<br>   init_thread(main_thread, &quot;main&quot;, 31);<br>   ASSERT(!elem_find(&amp;thread_all_list, &amp;main_thread-&gt;all_list_tag));<br>   list_append(&amp;thread_all_list, &amp;main_thread-&gt;all_list_tag);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    另外再注册时钟中断函数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">static void intr_timer_handler(void) &#123;<br>   struct task_struct* cur_thread = running_thread();<br>   ASSERT(cur_thread-&gt;stack_magic == 0x19870916);         // 检查栈是否溢出<br><br>   cur_thread-&gt;elapsed_ticks++;      // 记录此线程占用的cpu时间嘀<br>   ticks++;      //从内核第一次处理时间中断后开始至今的滴哒数,内核态和用户态总共的嘀哒数<br><br>   if (cur_thread-&gt;ticks == 0) &#123;      // 若进程时间片用完就开始调度新的进程上cpu<br>      schedule(); <br>   &#125; else &#123;                  // 将当前进程的时间片-1<br>      cur_thread-&gt;ticks--;<br>   &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    多嘴一句，中断默认情况下是关闭的。且每次进入中断以后，处理器会自动关中断，直到执行“iret”指令或者手动开启中断(本质上应该是恢复eflags寄存器)。</p>
+<p>    所以schedule函数第一行能够成立：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">ASSERT(intr_get_status() == INTR_OFF);<br></code></pre></td></tr></table></figure>
+
+<p>    一般的中断调用结束时会调用iret指令恢复eflags寄存器来重开中断。所以一个隐蔽的情况是：(其实调试一下应该就能明白)</p>
+<blockquote>
+<p>调度程序的switch_to函数第一次调度时返回到kernel_thread，在该函数中开启中断；而在此后的调度中，会返回到jmp intr_exit指令出，在之后的iret指令下恢复eflags寄存器，从而开启中断。</p>
+</blockquote>
+<p>插画ID：75919964</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2022/02/06/systemkernel-chapter10/">← Next 《操作系统真象还原》chapter10 笔记与思考</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2022/02/04/systemkernel-chapter8/">《操作系统真象还原》chapter8 笔记与警醒 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#PART-1"><span class="toc-number">1.</span> <span class="toc-text">PART 1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PART-2"><span class="toc-number">2.</span> <span class="toc-text">PART 2</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>关于如何理解Glibc堆管理器(Ⅰ——堆结构) | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>关于如何理解Glibc堆管理器(Ⅰ——堆结构)</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-08-07T12:06:30.000Z" id="date"> 2021-08-07</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.991Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>​</p>
+<p> 本篇实为个人笔记，可能存在些许错误；若各位师傅发现哪里存在错误，还望指正。感激不尽。</p>
+<p>若有图片及文稿引用，将在本篇结尾处著名来源。</p>
+<h3 id="首先从-什么是堆-开始讲起吧。"><a href="#首先从-什么是堆-开始讲起吧。" class="headerlink" title="首先从 什么是堆 开始讲起吧。"></a><strong>首先从</strong> <strong>什么是堆</strong> <strong>开始讲起吧。</strong></h3><p>        在操作系统加载一个应用程序的时候，会为程序创建一个独立的进程，这个进程拥有着一套独立的内存结构。大致结构如下图：</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210801123250711.gif'><img src="https://img-blog.csdnimg.cn/20210801123250711.gif">​<img src="blob:https://tokameine.top/55afeff7-dd26-4e0a-83c7-e037ebbe7ed0"></p>
+<p>         进程在运行之处会创建一块固定大小的<strong>堆空间</strong>，但当用户需要申请一块超出已有堆空间大小的内存时，操作系统就会调用**sbrk函数(也有其他类似功能的函数)**来延申这块空间</p>
+<p>        但正如我们所见，这样的拓展大小的方式似乎还是有极限的。当即便用sbrk去拓展Heap，也不能够满足用户的需求的时候(至少堆不能覆盖到栈上去，对吧？)，操作系统就会使用mmap来为进程开辟额外的空间，这些空间可以被视为“虚拟内存”，它们不需要时刻都加载在内存中，因此能够大大提升堆的空间</p>
+<p>        当然，如果即便如此也不能够满足用户所需要的空间，那这个申请空间的操作就会失败，例如malloc，它会返回一个NULL</p>
+<p>        并且，上图还显示了堆在内存中的结构——<strong>一段连续的内存块</strong>，记住这个特点将对接下来的理解很有帮助</p>
+<p>如下为一个堆的结构体申明：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">struct malloc_chunk &#123;<br> <br>  INTERNAL_SIZE_T      mchunk_prev_size;  /* Size of previous chunk (if free).*/<br>  INTERNAL_SIZE_T      mchunk_size;       /* Size in bytes, including overhead.*/<br> <br>  struct malloc_chunk* fd;   /* double links -- used only if free. */<br>  struct malloc_chunk* bk;<br> <br>  /* Only used for large blocks: pointer to next larger size.  */<br>  struct malloc_chunk* fd_nextsize; /* double links -- used only if free. */<br>  struct malloc_chunk* bk_nextsize;<br> <br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/81897e07-6de7-441e-b37b-cb6795cd5b56'><img src="blob:https://tokameine.top/81897e07-6de7-441e-b37b-cb6795cd5b56"></p>
+<p>        这可能会给人一种反直觉的印象，因为这个堆结构体似乎太小了，根本不能够像我们印象里的那样去存放数据</p>
+<p>        因此这里需要介绍一下Glibc中堆的寻址方式——<strong>隐式链表</strong></p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210801124731634.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210801124731634.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/037a5d70-8cce-451d-b741-d3b77c4950c3"></p>
+<p>         尽管上图已经很详尽的介绍了堆的存放，但我仍然有必要多做些说明</p>
+<p>        操作系统会将堆划分成多个chunk以分配给程序，也就是malloc请求到的实则是一个chunk</p>
+<p>        而malloc返回的指针实则是指向**chunk+16(在x86中则是+8)**处的地址，究其原因就是因为结构体中的如下两项</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">INTERNAL_SIZE_T      mchunk_prev_size;  /* Size of previous chunk (if free).*/<br>INTERNAL_SIZE_T      mchunk_size;       /* Size in bytes, including overhead.*/<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/e389c7cf-1c31-4537-8c07-7e670848717d'><img src="blob:https://tokameine.top/e389c7cf-1c31-4537-8c07-7e670848717d"></p>
+<p>        只有这两个数据是常驻于结构体中的(这句话有些晦涩，现在看不懂也没关系)</p>
+<p>        它们分别表示<strong>上一个chunk的大小</strong>和<strong>当前chunk的大小</strong>，那既然我们能够知道上一个chunk的大小，通过简单的加法就能够找到上一个chunk的位置了，这种方法就被称为隐式链表</p>
+<p>        而在mchunk_size的下面就是用来储存用户需要的数据</p>
+<p>        显然，如果从这个地方开始储存数据，上面给出的结构体就会被破坏了，因为另外四个成员无处安放了，但对于一个<strong>正被使用的chunk</strong>来说，这是无关紧要的，因此才说它们并不常驻(其中原因牵涉了其他，也将在下文叙述)</p>
+<p>        (但请注意，chunk块的申请是要符合**16字节(或8字节)**对齐的，尽管用户申请的时候看起来相当随意，但操作系统仍然会返回对齐后的堆结构)</p>
+<p>        同时，为了节省资源，mchunk_size的最后三位将用来储存额外的标志位，其意义这里不再赘述，但这里需要再一次强调的是，最后一位 <strong>P标记位</strong> 指示了<strong>上一个chunk是否处于被使用状态</strong></p>
+<p> <strong>尽管它们被用作标记，但在计算chunk大小的时候，我们会默认它们为0以计算合理大小</strong></p>
+<p> <strong>例如(二进制)1000101：Size&#x3D;1000000，A&#x3D;1，M&#x3D;0,P&#x3D;1</strong></p>
+<h3 id="实际操作："><a href="#实际操作：" class="headerlink" title="实际操作："></a>实际操作：</h3><p>示范程序：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">#include &lt;unistd.h&gt;<br>#include &lt;stdlib.h&gt;<br>#include &lt;string.h&gt;<br>#include &lt;stdio.h&gt;<br><br>int main()<br>&#123;<br>unsigned long long *chunk1, *chunk2;<br>chunk1=(unsigned long long)malloc(0x80);<br>chunk2=(unsigned long long)malloc(0x80);<br>printf(&quot;Chunk1:%p&quot;,chunk1);<br>printf(&quot;Chunk2:%p&quot;,chunk2);<br>return 0;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/590c4817-8758-41d5-bddd-223ef793742e'><img src="blob:https://tokameine.top/590c4817-8758-41d5-bddd-223ef793742e"></p>
+<p>         通过如下命令去编译这个文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">gcc -g heap.c -o heap<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/b137cc83-86f6-452c-9522-5cb5f05cf18c'><img src="blob:https://tokameine.top/b137cc83-86f6-452c-9522-5cb5f05cf18c"></p>
+<p>        然后用gdb调试heap文件，我们将断点定在第11行，查看此时的堆</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">gdb-peda$ heap<br>0x602000 PREV_INUSE &#123;<br>  prev_size = 0x0, <br>  size = 0x91, <br>  fd = 0x0, <br>  bk = 0x0, <br>  fd_nextsize = 0x0, <br>  bk_nextsize = 0x0<br>&#125;<br>0x602090 PREV_INUSE &#123;<br>  prev_size = 0x0, <br>  size = 0x91, <br>  fd = 0x0, <br>  bk = 0x0, <br>  fd_nextsize = 0x0, <br>  bk_nextsize = 0x0<br>&#125;<br>0x602120 PREV_INUSE &#123;<br>  prev_size = 0x0, <br>  size = 0x20ee1, <br>  fd = 0x0, <br>  bk = 0x0, <br>  fd_nextsize = 0x0, <br>  bk_nextsize = 0x0<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/bbaf2e14-5659-497b-8868-734edbd46cb6'><img src="blob:https://tokameine.top/bbaf2e14-5659-497b-8868-734edbd46cb6"></p>
+<p>        可以看出，我们申请的chunk大小为0x80，但实际返回的chunk却有0x90(<strong>最后的1为标志位</strong>)</p>
+<p>        同时，它们是严格的按照堆的顺序往下开辟的，从0x602000到0x602090，没有其他空挡</p>
+<p>        而0x602120是则是被称为“Top chunk”的堆结构，在当前的堆仍然充足的时候，操作系统通过分割Top Chunk来提供malloc的服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">gdb-peda$ p chunk1<br>$1 = (unsigned long long *) 0x602010<br>gdb-peda$ p chunk2<br>$2 = (unsigned long long *) 0x6020a0<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/bcb52914-5402-4994-b4ee-3fd780729fd4'><img src="blob:https://tokameine.top/bcb52914-5402-4994-b4ee-3fd780729fd4"></p>
+<p>        而查看chunk1的内容，发现它指向0x602010而不是0x602000</p>
+<p>        这也作证了前面所说的内容，在这空挡的16字节中储存了常驻的那两个成员，而其他成员则被舍弃了</p>
+<p>图片来源：<a target="_blank" rel="noopener" href="https://azeria-labs.com/heap-exploitation-part-1-understanding-the-glibc-heap-implementation/">https://azeria-labs.com/heap-exploitation-part-1-understanding-the-glibc-heap-implementation/</a> ​</p>
+<p>插画ID：72077484</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/08/07/glibc-2/">← Next 关于如何理解Glibc堆管理器(Ⅱ——Free与Bins)</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/07/23/pwn1/">GKCTF 2021 - checkin调试与分析 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A6%96%E5%85%88%E4%BB%8E-%E4%BB%80%E4%B9%88%E6%98%AF%E5%A0%86-%E5%BC%80%E5%A7%8B%E8%AE%B2%E8%B5%B7%E5%90%A7%E3%80%82"><span class="toc-number">1.</span> <span class="toc-text">首先从 什么是堆 开始讲起吧。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E9%99%85%E6%93%8D%E4%BD%9C%EF%BC%9A"><span class="toc-number">2.</span> <span class="toc-text">实际操作：</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

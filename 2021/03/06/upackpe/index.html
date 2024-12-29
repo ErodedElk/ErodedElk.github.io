@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>UPack PE文件分析与调试 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>UPack PE文件分析与调试</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-03-06T15:02:48.000Z" id="date"> 2021-03-06</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.017Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>    参考文章：<a target="_blank" rel="noopener" href="https://blog.csdn.net/learn112/article/details/112029389">https://blog.csdn.net/learn112/article/details/112029389</a></p>
+<p>    您可以将本篇文章当作该参考文章的拓展版、翻译版、压缩版，总之算是结合之后自己上手的过程记录。<strong>若您发现文章中出现错误，请务必指正。</strong></p>
+<p>    封面插图id：81508349</p>
+<p>    范例：notepad_upack.exe</p>
+<p>    准备工具：010Editor、Stud_PE</p>
+<p>    UPack：个人对其理解为一种压缩方法。将文件经过一定的算法编码压缩，在启动被压缩文件时将会按照逆过程解码。而其中比较经典的是其对PE文件头的压缩。我个人对这个过程的理解就是——将PE文件头原有的为可读性设计的格式打乱，在那些本不被用到的地方填补上需要用到的数据，最后将导入表等需要记录地址的数据改为那些本来不被使用的段落，以此减少空间浪费，但文件头不再拥有设计好的模板，最后阅读的时候会显得东拼西凑(指那些virtualaddress到处指，但是我觉得就算没压缩，看的时候还是感觉很乱就是了)……</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306195852793.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210306195852793.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/b39dc237-1f34-4b6e-9316-add35e36e4a6">​<img src="https://img-blog.csdnimg.cn/202103061959097.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70" class='item-img' data-src='https://img-blog.csdnimg.cn/202103061959097.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/202103061959097.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​</p>
+<p>    上面两图分别为经过UPack压缩和未经过压缩的notepad.exe文件。在010的模板中可以明显看出其区别，至少010已经没办法识别出Section和SectionHeaders(实际上也识别出了节区头，但这个识别结果是错误的，在Upack压缩的PE模板里，NtHeader以下部分都会出现错误。)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306200336383.png'><img src="https://img-blog.csdnimg.cn/20210306200336383.png"><img src="blob:https://tokameine.top/32edcb98-41d8-47ca-8250-ade34c724a3c">​<img src="https://img-blog.csdnimg.cn/20210306200328842.png" class='item-img' data-src='https://img-blog.csdnimg.cn/20210306200328842.png'><img src="https://img-blog.csdnimg.cn/20210306200328842.png">​</p>
+<p>    而上图为Stud_PE分析出的区段结果，也有着明显的差异。(但既然分析的是压缩后的文件，所以还是以后图为准。但目前编者还不会直接通过阅读16进制文件来推算偏移、大小等(upack压缩后的被打乱了位置，没了模板就读不来的废物)，所以目前还需要用到该工具)</p>
+<p>    以及还有一些奇怪的地方，在压缩后的文件中，第一和第三节区的实际偏移相同，实际大小相同，实际上是UPack压缩后产生的重叠节区。</p>
+<p>    (最后映射到内存中时，第一和第三节区会分别映射到不同的位置——1001000、1015000、1027000三处)</p>
+<p>    回到正题，首先观察下图。4D5A为签名，然后紧跟着就是KERNEL32.DLL，这个名字显然就是动态链接库的名称了。对比未压缩的文件，这个区域本来是无用的区域，所以用其他有用的东西填进去以弥补了空间浪费。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306195852793.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210306195852793.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/6b02230b-73e5-4ccc-847c-670ce8c6d5ce">​</p>
+<p>    另外一个需要注意的是，AddressOfNewExeHeader的数值被改为了10，这个数值在本来的文件中为E0。</p>
+<p>    DOS存根直接消失了，在模板中点开该栏后什么也没有。</p>
+<p>    以及Nt头中<strong>SizeOfOptionalHeade</strong>由E0增加到了148。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306204456978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210306204456978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/f1cecabd-c44e-4e1f-bcf6-44f10e3aea78">​</p>
+<p>    但我们实际打开可选头的模板，010显示其大小为B0，并且<strong>NumberOfSections</strong>被降到了0A，少掉了6个数组(如图中蓝色区域为现存的表，而蓝色以下的紫区为被忽略的表，正好有6个被忽略了)。</p>
+<p>    (注：在实际中，16张表的数量其实是固定的，但有可能我们还需要用到更多的数据，这16张可能不太够，所以往往还需要另外输入<strong>NumberOfRvaAndSize</strong>的大小来规定该结构体内容的量)。</p>
+<p>    并且可以注意到，可选头从28开始，大小为148，但其结束点却只到D7，而不是170。</p>
+<p>    于是这些被扩增的区域实际上存放了UPack的解码代码(如图蓝色部分，但010的识别多了一行，还是忽视的比较好)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306210454915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210306210454915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/fe3017c8-d65e-4473-85ed-ac1030450def">​</p>
+<p>(反调试器中的该段位置对应的汇编代码)(ImageBase[1000000]+VisualOffset[1000]+D8&#x3D;10010D8)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/2021030621090881.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/2021030621090881.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/7c10df23-a1ee-4586-b1ba-93eec8b9b652">​</p>
+<p>    接下来尝试计算文件实际的EP。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306212343135.png'><img src="https://img-blog.csdnimg.cn/20210306212343135.png"><img src="blob:https://tokameine.top/94155e12-58af-4606-871f-d750d57e0be2">​</p>
+<p>    AddressOfEntryPoitn为1018，VisualAddress为1000，而PointerToRawData在010中已经找不到了，从节区头开始，模板都是错误的，而该数值就在节区头中。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306212943789.png'><img src="https://img-blog.csdnimg.cn/20210306212943789.png"><img src="blob:https://tokameine.top/7167ca67-83c3-4e23-b87e-33059e49aa70">​</p>
+<p>    猜了一下其位置，大致在这个蓝色加深的位置，但实际上手去找还是不太行。现在姑且当其为10。那么计算结果应为1018-1000+10&#x3D;28</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306213123489.png'><img src="https://img-blog.csdnimg.cn/20210306213123489.png"><img src="blob:https://tokameine.top/5c34d377-691b-4ab7-b0bb-91b813bc9a56">​</p>
+<p>    跟入之后发现并不是动态链接库的名称。该盲区出自于这个<strong>PointerToRawData</strong>的数值和<strong>FileAliganment</strong>不成倍数(指其不为0&#x2F;200&#x2F;400&#x2F;600&#x2F;……)</p>
+<p>    (此处参考：<a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_1511e79950102xcws.html">http://blog.sina.com.cn/s/blog_1511e79950102xcws.html</a>  之所以要有这种倍数关系，还是因为PE文件的对齐规范)</p>
+<p>    所以最后应把其当作0开始一个个试错，本例中1018-1000+0&#x3D;18就已经得到答案了。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306215330138.png'><img src="https://img-blog.csdnimg.cn/20210306215330138.png"><img src="blob:https://tokameine.top/08925ae7-d6a8-4d80-9e8b-a371802d51ed">​</p>
+<p>    (但这里遇到了一些奇怪的问题。不论在x32dbg还是ollydbg中，只要移动光标后，1001018处地址就会消失，被1001017取代，并且再也无法找回)</p>
+<p>    (不过我的Ollydbg在打开文件的时候就会自动加载到该位置，所以该问题暂时还无需顾虑……)</p>
+<p><strong>计算导入表：</strong></p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306220014928.png'><img src="https://img-blog.csdnimg.cn/20210306220014928.png"><img src="blob:https://tokameine.top/bcb6e673-875b-4dcd-b04c-ea73a3879802">​</p>
+<p>    VirtualAddress为271EE，对应第三区段，实际偏移RVA为271EE-27000&#x3D;1EE</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306220502569.png'><img src="https://img-blog.csdnimg.cn/20210306220502569.png"><img src="blob:https://tokameine.top/df32dd91-415d-46db-9307-64113bb985df">​</p>
+<p>    (IMAGE_IMPORT_DESCRIPTOR结构体大小为6个DWORD类型数据，对应蓝色区域)</p>
+<p>    跟入02位置，即可见到刚才所说的kernel32.dll的名称。</p>
+<p>    (注：“该结构体之后既不是第二个结构体，也不是NULL结构体。实际上到从1EE~200便是第三节区的结束。运行时偏移在200以下的部分不会映射到第三个节区内存。”)</p>
+<p>    (0<del>1FF[第三节区]————27000</del>271FF，而27200~28000则全由NULL填充)</p>
+<p>    以及11E8为IAT,换算后得到11E8-1000+0(同上计算盲区一样)&#x3D;1E8(下图即为转入后数据。对应IAT域，也作为INT使用，也用NULL结束)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306221707578.png'><img src="https://img-blog.csdnimg.cn/20210306221707578.png"><img src="blob:https://tokameine.top/9c236a3e-58f9-44d1-80b2-1085a06d5a04">​</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306221838382.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210306221838382.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/1e10f258-5992-4818-b95d-c95a479c3088">​</p>
+<p><strong>调试：</strong></p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306225728548.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210306225728548.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/265e2d9c-726c-41ea-9df7-c0e77934d405">​</p>
+<p>    在图示附近存在存在一个大循环，观察堆栈信息猜测其为程序的解码过程。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210306225901340.png'><img src="https://img-blog.csdnimg.cn/20210306225901340.png"><img src="blob:https://tokameine.top/be4a5810-0a84-48b3-a20e-9f89087bf15f">​</p>
+<p>Ctrl+F7自动步进调试，最终卡在该处。将数据循环写入ESI当前位置，判断其真的是一个解码过程。至此完成调试。</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/03/11/reverse02/">← Next 内嵌补丁 与 洞穴代码分析案例</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/02/25/pe01/">PE结构详解 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

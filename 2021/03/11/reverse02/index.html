@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>内嵌补丁 与 洞穴代码分析案例 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>内嵌补丁 与 洞穴代码分析案例</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-03-11T08:09:34.000Z" id="date"> 2021-03-11</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.006Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>示范案例：unpackme#1.aC.exe,学习过程参照《逆向工程核心原理》</p>
+<p><strong>如您发现了某些错误和不规范，请务必指正</strong>。</p>
+<p>插画ID：85939258</p>
+<p><strong>内嵌补丁：</strong></p>
+<p>    如名字所述，是指将补丁内嵌进程序中的一种打补丁的办法。与常规补丁不同的是，内嵌补丁嵌入在程序的代码当中，也就是说，每次执行该程序时相当于打了一次补丁(常规补丁通常打下第一次就不需要再有第二次了)。</p>
+<p><strong>洞穴代码：</strong></p>
+<p>    内嵌补丁常用的一种打补丁的方法。目前我个人只了解到其对于“为加密或压缩过的代码下补丁”时的作用，因此也引之为例。</p>
+<p>    在反调试过程中，我们会希望能够修改其代码以达成破解。但对于那些被加密过的程序，却通常不能这样轻易的完成打补丁的工作。因为你修改后的代码会在启动程序时经过“解密”，那么你原本的代码就会遭到破坏，使得程序报错。但就出现一个问题——我按照它的方法加密后修改代码不就行了？</p>
+<p>    可以，但过程会相当繁琐。假设我们需要修改10条代码，那么就必须加密10份代码。也因为在“下补丁时应该尽可能地不去改变程序主代码”，所以通常不这样做。因此便存在“洞穴代码”这一操作。</p>
+<p>    在PE文件的学习中，我们了解到，节区映射到内存时，很可能会预留出一些NULL填补的区域。那么如果在这些区域覆写新的补丁代码，那么就很可能逃过程序的解密算法影响。</p>
+<p>    (注：这是我个人学习之后的猜测。越是复杂的解密算法就越是消耗算力，它们不可能浪费不必要的算力去把其他NULL覆盖的区域也来一次解密，所以这些区块理论上应该算是“安全区”一样的存在)</p>
+<p>    那么，攻击者需要做的，就是将解密算法最后的Jump指令(JNZ或者JE等跳转指令)指向我们添加补丁的位置，就能够让程序执行我们期望的行为。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310082056588.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310082056588.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/a102eb08-cbf2-4bd1-8d3b-97cd82be6f1b">​</p>
+<p>如上图为unpackme#1.aC.exe的反调试代码。EP为401000，而401007开始往下有一段看似乱码的东西，实则就是被加密后的代码。<img src="https://img-blog.csdnimg.cn/20210310082501633.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70" class='item-img' data-src='https://img-blog.csdnimg.cn/20210310082501633.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310082501633.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​</p>
+<p>    上图为解密之后的同样区段。能够发现，其字符串明显变得正常了(详见如下的反调试过程)。但如果现在去修改程序的汇编代码，就会在下一次启动程序的时候遭到“解密”，致使程序运行错误。</p>
+<p><strong>反调试过程：</strong></p>
+<p>    调试程序，来到EP。发现只有一条401001处的CALL指令，跟入。然后在4010E9处将4010F5保存进EAX寄存器中，并将其入栈，再CALL 40109B。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310083205822.png'><img src="https://img-blog.csdnimg.cn/20210310083205822.png"><img src="blob:https://tokameine.top/679811ab-f6a9-48b2-88c7-8338350fd8ad">​</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310083232116.png'><img src="https://img-blog.csdnimg.cn/20210310083232116.png"><img src="blob:https://tokameine.top/a7c2f97c-b70d-4f68-b5f0-f96799390bb4">​</p>
+<p>    不妨来到刚刚保存进EAX的4010F5处看看究竟保存了些什么。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310083748548.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310083748548.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/8f184fa8-5579-4d06-b11a-a5fb21ebce55">​</p>
+<p>    显然，这个EAX中保存的实际上是需要解码的代码段地址。那么就几乎可以认定，40109B就是接下来要进行的解码函数地址了。跟入。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310084005743.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310084005743.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/649bfc47-ebf0-4998-8059-fb44ab504892">​</p>
+<p>    40109E处，将154放入ECX。而在4010A3~4010AD中，容易发现其对刚刚EAX处的代码进行了异或解密。那么154就应该是解密代码段的长度了。</p>
+<p>    正常解密时，完成该循环后应该达到4010B0处的CALL，转到4010BD，再次出现了循环。但本次解码的开始地址为401007，长度为7F，过程仅仅只是与7进行一次异或。</p>
+<p>    以及对EAX处保存的地址重新与11异或。可见EAX处的代码进行了双重加密。</p>
+<p>    而完成解密之后，返回4010B5，并由下一个CALL进入401039。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310153520251.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310153520251.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/34985071-64f2-42de-9d80-ff237e3edf8c">​</p>
+<p>    在401046~40104F处存在一个加法循环，在401062处又进行了一次比较，实际上为一个校验过程。但在校验之前，40105D处的CALL会再一次进行解密过程，这里并不太重要，但不妨看看解密之后是否能找到什么讯息。如下图：</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310185846402.PNG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310185846402.PNG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/d0be8f7e-07a3-4a16-899f-daf91a27e1d5">​</p>
+<p>    显然，字符串“yoou must unpack me !!!”已经能够找到了。那么我们的目的显然就是修改这个地址处的字符了。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310155331248.png'><img src="https://img-blog.csdnimg.cn/20210310155331248.png"><img src="blob:https://tokameine.top/01539b99-c886-4851-bd3f-5a8a2c3cc2e2">​</p>
+<p>    继续调试将发现如上代码。401068处JE跳转至401083，再由401083跳转至40121E。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310192336143.PNG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310192336143.PNG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/eef69360-ff78-4efa-804a-22efbc84812f">​</p>
+<p>    因为Ollydbg在处理解码代码后的回显不太如意，此处换为了x32dbg，发现40121E处即为OEP(我个人是根据401220处调用GetModuleHandleA函数猜测得出的结论，但对于Windows系统的API还不太了解)。</p>
+<p>    同时也能发现，401280开始，均为0填充的空白区，那么就可以利用这一块来嵌入补丁了。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310201953452.PNG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210310201953452.PNG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70"><img src="blob:https://tokameine.top/e7c081fd-1b7f-437c-aa3e-14e0741f42f6">​</p>
+<p>    覆写如上代码。该代码主要用于覆写原本的字符串(4012AB处储存的实际上为字符串“ReverseCore”，而4012B7则为字符串“unpacked”，写入之后被x32dbg识别为了其他东西以至于无法清晰分辨了……)。</p>
+<p>    最后则需要修改转入出的代码。由上面的图可见，401083处本该为跳转代码，其经过解密之后就是新的跳转代码了。那么覆写该段代码，将EE 91 06改为EE FF 06即可。</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310202430893.PNG'><img src="https://img-blog.csdnimg.cn/20210310202430893.PNG"><img src="blob:https://tokameine.top/68c76b47-6393-4f69-9dc3-f5eea1ced9d6">​</p>
+<p>    (注：如下图。EE 91 06是未经过解密的代码，所以覆写的代码也应该处于加密状态，即EE FF 06。该方法建立在已知其解密方法为“将数值与7进行XOR处理，所以能够方向计算出新的代码”。即便不在反调试器中修改，直接通过修改16进制文件也能达到相同效果)</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210310202734158.PNG'><img src="https://img-blog.csdnimg.cn/20210310202734158.PNG"><img src="blob:https://tokameine.top/360ccd0c-f364-4b86-b42c-52f06df42599">​</p>
+<p>    该文件完成补丁。</p>
+<p><strong>注：</strong></p>
+<p>还存在一个问题。在实际调试过程中，反调试极有可能出现异常导致中断。原因出自于覆写字符串这一行为并不具有权限，因此调试很可能停在rep movsb上。将文件可写打开之后发现并没能解决问题。解决方案在得到答案后将会补齐。<img src="https://img-blog.csdnimg.cn/20210310203135174.PNG" class='item-img' data-src='https://img-blog.csdnimg.cn/20210310203135174.PNG'><img src="https://img-blog.csdnimg.cn/20210310203135174.PNG">​</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/03/17/xxtea/">← Next XXTEA加密流程分析</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/03/06/upackpe/">UPack PE文件分析与调试 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

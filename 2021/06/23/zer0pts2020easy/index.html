@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Zer0pts2020 - easy strcmp 分析与加法 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>Zer0pts2020 - easy strcmp 分析与加法</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-06-23T05:50:56.000Z" id="date"> 2021-06-23</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.019Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>​</p>
+<p>    无壳，放入IDA自动跳到main函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">__int64 __fastcall main(int a1, char **a2, char **a3)<br>&#123;<br>  if ( a1 &gt; 1 )<br>  &#123;<br>    if ( !strcmp(a2[1], &quot;zer0pts&#123;********CENSORED********&#125;&quot;) )<br>      puts(&quot;Correct!&quot;);<br>    else<br>      puts(&quot;Wrong!&quot;);<br>  &#125;<br>  else<br>  &#123;<br>    printf(&quot;Usage: %s &lt;FLAG&gt;\n&quot;, *a2);<br>  &#125;<br>  return 0LL;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/64b293cf-adcd-4df4-ab53-6977529ee897'><img src="blob:https://tokameine.top/64b293cf-adcd-4df4-ab53-6977529ee897"></p>
+<p>    条件明确，要求我们输入的字符串和如下字符串相同</p>
+<blockquote>
+<p>zer0pts{********CENSORED********}</p>
+</blockquote>
+<p>     提交flag发现错误，显然没有那么容易；观察函数列表：</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210623113617452.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210623113617452.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/9f113abc-7934-49bb-bf40-9f8169dd0b6c"></p>
+<p>     从sub_610到sub_795的一系列函数笔记碍眼，不妨一个个看一下，能够发现sub_6EA有着明显的逻辑：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">__int64 __fastcall sub_6EA(__int64 a1, __int64 a2)<br>&#123;<br>  int i; // [rsp+18h] [rbp-8h]<br>  int v4; // [rsp+18h] [rbp-8h]<br>  int j; // [rsp+1Ch] [rbp-4h]<br><br>  for ( i = 0; *(_BYTE *)(i + a1); ++i )<br>    ;<br>  v4 = (i &gt;&gt; 3) + 1;<br>  for ( j = 0; j &lt; v4; ++j )<br>    *(_QWORD *)(8 * j + a1) -= qword_201060[j];<br>  return qword_201090(a1, a2);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/aca21bb6-7339-4f9e-8e69-4e53072a3aaf'><img src="blob:https://tokameine.top/aca21bb6-7339-4f9e-8e69-4e53072a3aaf"></p>
+<p>    但当我试图用IDA查看该函数的交叉引用，会发现提示：</p>
+<blockquote>
+<p>Couldn’t find any xrefs!</p>
+</blockquote>
+<p>    那这个函数岂不是没有被用到吗？不被执行还需要分析吗？</p>
+<p>    可以从init函数中找到答案：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void __fastcall init(unsigned int a1, __int64 a2, __int64 a3)<br>&#123;<br>  signed __int64 v4; // rbp<br>  __int64 i; // rbx<br><br>  v4 = &amp;off_200DF0 - &amp;funcs_889;<br>  init_proc();<br>  if ( v4 )<br>  &#123;<br>    for ( i = 0LL; i != v4; ++i )<br>      ((void (__fastcall *)(_QWORD, __int64, __int64))*(&amp;funcs_889 + i))(a1, a2, a3);<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/8ec1219d-1ebd-452a-8118-4f1f7b9ebfb7'><img src="blob:https://tokameine.top/8ec1219d-1ebd-452a-8118-4f1f7b9ebfb7"></p>
+<p>    for循环中调用了一系列的函数，而函数地址从funcs_889开始，跟入便能够发现如下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">.init_array:0000000000200DE0 funcs_889       dq offset sub_6E0       ; DATA XREF: LOAD:00000000000000F8↑o<br>.init_array:0000000000200DE0                                         ; LOAD:0000000000000210↑o ...<br>.init_array:0000000000200DE8                 dq offset sub_795<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/0b0ecb38-cd53-4818-a065-df43e3249ef1'><img src="blob:https://tokameine.top/0b0ecb38-cd53-4818-a065-df43e3249ef1"></p>
+<p>    分别调用了sub_6E0和sub_795两个函数；上一个倒不值得关注，进入下面的那个看看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">// write access to const memory has been detected, the output may be wrong!<br>int (**sub_795())(const char *s1, const char *s2)<br>&#123;<br>  int (**result)(const char *, const char *); // rax<br><br>  result = &amp;strcmp;<br>  qword_201090 = (__int64 (__fastcall *)(_QWORD, _QWORD))&amp;strcmp;<br>  off_201028 = sub_6EA;<br>  return result;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/19236918-5799-478d-beaf-9c7c6c9292e8'><img src="blob:https://tokameine.top/19236918-5799-478d-beaf-9c7c6c9292e8"></p>
+<p>     可见，off_201028被置为sub_6EA函数地址了</p>
+<p class='item-img' data-src='https://img-blog.csdnimg.cn/20210623115426767.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70'><img src="https://img-blog.csdnimg.cn/20210623115426767.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Rva2FtZWluZQ==,size_16,color_FFFFFF,t_70">​<img src="blob:https://tokameine.top/b654771e-aab4-4498-b112-732baeabb440"></p>
+<p>     可以看到，off_2010288实际上是strcmp函数的地址，但现在它被替换成了sub_6EA</p>
+<p>    因此我们执行strcmp函数时实际上是执行sub_6EA函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">__int64 __fastcall sub_6EA(__int64 a1, __int64 a2)<br>&#123;<br>  int i; // [rsp+18h] [rbp-8h]<br>  int v4; // [rsp+18h] [rbp-8h]<br>  int j; // [rsp+1Ch] [rbp-4h]<br><br>  for ( i = 0; *(_BYTE *)(i + a1); ++i )<br>    ;<br>  v4 = (i &gt;&gt; 3) + 1;<br>  for ( j = 0; j &lt; v4; ++j )<br>    *(_QWORD *)(8 * j + a1) -= qword_201060[j];<br>  return qword_201090(a1, a2);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/5d592070-34aa-408d-b458-5fd4e25ad652'><img src="blob:https://tokameine.top/5d592070-34aa-408d-b458-5fd4e25ad652"></p>
+<p>    逻辑：将字符串每8个比特位减去一个数字</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">.data:0000000000201060 qword_201060    dq 0, 410A4335494A0942h, 0B0EF2F50BE619F0h, 4F0A3A064A35282Bh<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/c2dea6b1-0bf6-419d-ab85-cf7cd00f1dd1'><img src="blob:https://tokameine.top/c2dea6b1-0bf6-419d-ab85-cf7cd00f1dd1"></p>
+<p>     那么解密脚本姑且是能够写出来了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">int main()<br>&#123;<br>char p[] = &quot;zer0pts&#123;********CENSORED********&#125;&quot;;<br>uint64 k[4] = &#123; 0, 0x410A4335494A0942, 0x0B0EF2F50BE619F0, 0x4F0A3A064A35282B &#125;;<br>for (int i = 0; i &lt; 4; i++)<br>&#123;<br>*(uint64*)&amp;(p[i*8]) += k[i];<br>&#125;<br>cout &lt;&lt; p;<br>&#125; <br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/0413ff55-d776-4cdc-b3ee-7a20d46ecc24'><img src="blob:https://tokameine.top/0413ff55-d776-4cdc-b3ee-7a20d46ecc24"></p>
+<p>    但是，我还是好奇这样一个字符串是如何实现大数加减法的，于是单步跟了进去</p>
+<p>    以 0x410A4335494A0942 为例，其二进制表达为：</p>
+<blockquote>
+<p>100 0001 0000 1010 0100 0011 0011 0101 0100 1001 0100 1010 0000 1001 0100 0010</p>
+</blockquote>
+<p>    因为Intel是小端序的，所以从后面往前读</p>
+<blockquote>
+<p>0100 0010——-&gt; 66(十进制)</p>
+</blockquote>
+<p>    而我们的flag变换字符为：</p>
+<blockquote>
+<p>‘*‘ (42)——–&gt;’I’ (108)</p>
+</blockquote>
+<p>    相差正好为66；因此结果也变得显然了：</p>
+<p>    字符串大数相加的实现为：将大数做成多个字节，将每个字节与对应的字符串字符相加(指相同字节位对齐相加，多者溢出) ​</p>
+<p>插图ID：90683044</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/06/24/2019redeasyre/">← Next 2019红帽杯 - easyRE 分析与自省</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/06/21/wustctf2020level3/">WUSTCTF2020-level3 笔记与自省 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

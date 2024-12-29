@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>BUUCTF - Youngter-drive笔记与思考 (线程) | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>BUUCTF - Youngter-drive笔记与思考 (线程)</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-04-29T16:12:13.000Z" id="date"> 2021-04-30</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:34.986Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>插图ID: 89210183</p>
+<p>Ⅰ. 解题步骤(省略细节的描述)</p>
+<p>Ⅱ. 知识拓展(对各函数作用进行解释)</p>
+<p><strong>Ⅰ.</strong></p>
+<p>    如下为IDA分析得到的main函数。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">//main函数(主流程)<br>int __cdecl main_0(int argc, const char **argv, const char **envp)<br>&#123;<br>  HANDLE v4; // [esp+D0h] [ebp-14h]<br>  HANDLE hObject; // [esp+DCh] [ebp-8h]<br><br>  sub_4110FF();<br>  ::hObject = CreateMutexW(0, 0, 0);<br>  j_strcpy(Destination, &amp;Source);<br>  hObject = CreateThread(0, 0, StartAddress, 0, 0, 0);<br>  v4 = CreateThread(0, 0, sub_41119F, 0, 0, 0);<br>  CloseHandle(hObject);<br>  CloseHandle(v4);<br>  while ( dword_418008 != -1 )<br>    ;<br>  sub_411190();<br>  CloseHandle(::hObject);<br>  return 0;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    sub_4110FF()函数作为输入，输入内容保存在 <strong>Source</strong></p>
+<p>将<strong>Source</strong>内容复制到<strong>Destination</strong></p>
+<p>    分别为 <strong>hObject</strong> 与 <strong>v4</strong> 各创建一个线程，并且前者中包括一个 <strong>StartAddress</strong> 函数，后者则包括 <strong>sub_41119F</strong> 函数</p>
+<p>    有一个特别的指需要注意：<strong>dword_418008</strong> 该值将分别在上述两个函数中变换，当前值为1D—-&gt; 30</p>
+<p>    以及最后的 <strong>sub_411190</strong> 用于比较结果</p>
+<p>    如下为两个进程内人函数。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">//StartAddress函数<br>void __stdcall StartAddress_0(int a1)<br>&#123;<br>  while ( 1 )<br>  &#123;<br>    WaitForSingleObject(hObject, 0xFFFFFFFF);<br>    if ( dword_418008 &gt; -1 )<br>    &#123;<br>      sub_41112C(&amp;Source, dword_418008);<br>      --dword_418008;<br>      Sleep(0x64u);<br>    &#125;<br>    ReleaseMutex(hObject);<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">//sub_411B10函数<br>void __stdcall sub_411B10(int a1)<br>&#123;<br>  while ( 1 )<br>  &#123;<br>    WaitForSingleObject(hObject, 0xFFFFFFFF);<br>    if ( dword_418008 &gt; -1 )<br>    &#123;<br>      Sleep(0x64u);<br>      --dword_418008;<br>    &#125;<br>    ReleaseMutex(hObject);<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    注意到，两个函数均作 –<strong>dword_418008，但只有一方对 Source 进行 sub_41112C，</strong>以及各自都有一个Sleep(0x64)，可知两个线程交替进行。</p>
+<p>    如下为 <strong>sub_411190</strong> 函数内容</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">//sub_411940函数<br>char *__cdecl sub_411940(int a1, int a2)<br>&#123;<br>  char *result; // eax<br>  char v3; // [esp+D3h] [ebp-5h]<br><br>  v3 = *(a2 + a1);<br>  if ( (v3 &lt; 97  v3 &gt; 122) &amp;&amp; (v3 &lt; 65  v3 &gt; 90) )<br>    exit(0);<br>  if ( v3 &lt; 97  v3 &gt; 122 )<br>  &#123;<br>    result = off_418000[0];<br>    *(a2 + a1) = off_418000[0][*(a2 + a1) - 38];<br>  &#125;<br>  else<br>  &#123;<br>    result = off_418000[0];<br>    *(a2 + a1) = off_418000[0][*(a2 + a1) - 96];<br>  &#125;<br>  return result;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/b0253564-b79d-412d-9c92-f12104689d14'><img src="blob:https://tokameine.top/b0253564-b79d-412d-9c92-f12104689d14"></p>
+<p>    函数逻辑较为简单：每次取 <strong>Source[dword_418008] ，</strong>根据If条件进行运算，总共运算次数应为 15 次</p>
+<p>    解密脚本不留神给删掉了，就不放了，其他师傅那肯定都能找到。</p>
+<p>    最后是比较函数。本没什么可说的地方，但本题稍有不同。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">//sub_411880函数<br>int sub_411880()<br>&#123;<br>  int i; // [esp+D0h] [ebp-8h]<br><br>  for ( i = 0; i &lt; 29; ++i )<br>  &#123;<br>    if ( Source[i] != off_418004[i] )<br>      exit(0);<br>  &#125;<br>  return printf(&quot;\nflag&#123;%s&#125;\n\n&quot;, Destination);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>    由此代码可知其判断字符数应为 <strong>29</strong> 个。</p>
+<p>    密文为：<strong>TOiZiZtOrYaToUwPnToBsOaOapsyS</strong> 其字符数也是 <strong>29</strong></p>
+<p>    但上述分析中明显可以看出，最终的flag长度应为 <strong>30</strong> 个字符，最后一个字符并没有确切方法，通过遍历得出为 ‘E’</p>
+<p><strong>Ⅱ.</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">HANDLE CreateMutexW(//创建或打开一个已命名或未命名的互斥对象。<br>  LPSECURITY_ATTRIBUTES lpMutexAttributes,<br>  BOOL                  bInitialOwner,<br>  LPCWSTR               lpName<br>);//本题中将hObject所指线程置空<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">HANDLE CreateThread(//创建一个线程以在调用进程的虚拟地址空间内执行<br>  LPSECURITY_ATTRIBUTES   lpThreadAttributes,<br>  SIZE_T                  dwStackSize,<br>  LPTHREAD_START_ROUTINE  lpStartAddress,<br>  __drv_aliasesMem LPVOID lpParameter,<br>  DWORD                   dwCreationFlags,<br>  LPDWORD                 lpThreadId<br>);//本题中为StartAddress函数建立一个子线程以运行该函数<br>//v4同理<br></code></pre></td></tr></table></figure>
+
+<p class='item-img' data-src='blob:https://tokameine.top/ba968f1f-dd49-4bd1-8e2a-44c2bbe22123'><img src="blob:https://tokameine.top/ba968f1f-dd49-4bd1-8e2a-44c2bbe22123"></p>
+<p>以下将拓展些许有关<strong>“线程”</strong>的概念：</p>
+<p>    一个程序在运行时占用整个进程，一个进程可以建立多个线程。这些线程能够并行(指同时进行代码处理)以加快程序的运行速度。线程的定义不在这里赘述，以下内容为线程在运用过程中的知识。</p>
+<p>    线程能分为 <strong>“对等线程”  “分离线程”</strong> 和 <strong>“主线程”</strong></p>
+<p>    当一个处理器在处理一个线程时遇到<strong>慢速系统调用(sleep、read等)<strong>等需要消耗较多时间的处理需求时</strong>，</strong>控制便通过上下文切换传送到下一个对等进程</p>
+<blockquote>
+<p>参考本题：</p>
+<p> <strong>StartAddress</strong> 与 <strong>sub_41119F</strong> 均有一个<strong>sleep</strong>函数<strong>。</strong>当该进程进行到该函数时，控制自动切换到另外一个线程并运行，并在另外一个线程中遇到Sleep，则又切换回原进程，因此才有<strong>加密 15 次</strong></p>
+<p>    但上述也提到，线程是并行的。这两个线程并不是严谨的交替，而是因为Sleep(0x64)这段时间足够将线程中的所有内容运行结束而有余，因此才造成了交替运行的结果</p>
+<p>   注：Sleep函数的参数以<strong>毫秒</strong>为单位</p>
+</blockquote>
+<p>    和一个进程相关的线程将会组成一个<strong>对等线程池</strong>，独立于其他线程创立的子线程</p>
+<p>    主线程是所有对等线程中优先级最高的线程(这是它们的唯一区别)</p>
+<p>    不过对于上述线程的分类，还有一个更加合理的分类： <strong>“可结合”</strong> 与 <strong>“分离”</strong></p>
+<p>    可结合的线程能够被任何其他线程回收或关闭，且在回收之前，其占用的内存资源<strong>不会释放</strong>；可分离的线程则不可被其他线程关闭，其内存资源将在终止时<strong>自动释放</strong></p>
+<p>    另外一个需要注意的是不同线程间的共享变量</p>
+<p>    一个进程将被加载入一块虚拟内存，而其创造的所有线程都能够访问虚拟内存的任何地方</p>
+<p>    也就是说，线程的虚拟内存总是共享的；相反的，其寄存器从不会共享，不同线程无法调用其他线程的寄存器</p>
+<p>    既然虚拟内存是共享的，也就是说，每个线程的栈堆是共享的；只要线程能够获取其他线程的指针，就能够调用该线程的栈堆(由此也可推出：将一个线程中的变量入栈，则其他线程便能够调用它)</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/05/14/gwctf-2019-xxor/">← Next GWCTF 2019 - xxor 笔记与思考</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/04/24/buuctfre-simplerev/">BUUCTF-RE-SimpleRev笔记与思考 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>

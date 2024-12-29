@@ -1,0 +1,74 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>《IDA权威指南》 Note | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>《IDA权威指南》 Note</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2021-03-22T14:17:41.000Z" id="date"> 2021-03-22</time></div></span><br><span>Last Update: <div class="control"><time datetime="2024-12-29T04:50:35.000Z" id="updated"> 2024-12-29</time></div></span></div></div><hr><div id="post-content"><p>插图ID：87390511</p>
+<p>笔记主要用作字典，记录仅为了方便自己的查阅</p>
+<p><strong>调用约定：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void demo_cdecl(int x,int y);<br>;demo_cdecl(1,2);<br>//-----------------------//<br>push 2;  push y<br>push 1;  push x<br>call demo_cdecl<br>add esp,8<br>//-----------------------//<br>mov [esp+4],2<br>mov [esp],1<br>call demo_cdecl<br>//-----------------------//<br>;C调用约定：由调用方清除栈中参数<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void _stdcall demo_stdcall(itn x,int y);<br>;demo_stdcall(1,2);<br>//-----------------------//<br>push 2<br>push 1<br>call demo_stdcall<br>//-----------------------//<br>;标准调用约定：被调用方通过ret 8来清除栈中参数<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">void fastcall demo_fastcall(int w,int x,int y,int z);<br>;demo_fastcall(1,2,3,4);<br>//-----------------------//<br>push 4<br>push 3<br>mov edx,2<br>mov ecx,1<br>call demo_fastcall<br>//-----------------------//<br>x86 fastcall调用约定：将前两个参数(w,x)分别送入ECX和EDX寄存器，其他参数同stdcall相同，由被调用方清除栈中数据<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">C++调用约定：<br>    使用this指针，由调用方提供调用地址<br>    Mircosoft Visual C++提供thiscall调用约定，将this指针传递道ECX寄存器，并和stdcall中相同，由被调用者清除栈中参数<br></code></pre></td></tr></table></figure>
+
+<p><strong>函数特征：</strong></p>
+<p class='item-img' data-src='http://tokameine.top/wp-content/uploads/2021/03/QQ%E6%88%AA%E5%9B%BE20210322222050.png'><img src="http://tokameine.top/wp-content/uploads/2021/03/QQ%E6%88%AA%E5%9B%BE20210322222050.png" alt="IDA函数属性"></p>
+<p>函数名称：可用于更改函数名称</p>
+<p>起始地址：IDA自动识别的函数起始点</p>
+<p>结束地址：同上</p>
+<p>局部变量区(Local variables area)：函数局部变量专用的栈字节数。多数情况下，IDA会通过分析函数的栈指针的行为，自动计算该数值</p>
+<p>保存的寄存器(Saved registers)：为调用方保存寄存器所使用的栈字节数(指 push EBP,pop EBP等)。IDA认为保存的寄存器区域存放在保存的返回地址顶部、与函数有关的所有局部变量的下方。一些编译器选择将寄存器保存在函数局部变量的顶部。IDA认为保存这些寄存器所使用的空间属于局部变量区域，而非保存的寄存器区域(本例为main函数，在起始位置存在push EBP的行为)</p>
+<p>已删除的字节(Purged bytes)：表示当函数返回调用方时，IDA从栈中删除的参数的字节数。对cdecl函数而言，这个值应该为‘0’。对stdcall函数来说，这个值表示传递道栈上的所有参数占用的空间。在x86程序中，如果IDA观察道程序使用了返回指令的RET N变体，便会自动确定该数值。</p>
+<p>帧指针增量(Frame pointer delta)：编译器可能会对函数的帧指针进行调整，使其指向局部变量区域的中间，而不是指向保存在局部变量区域的底部的帧指针中。调整后的帧指针到保存的帧指针之间的这段距离叫做帧指针增量。使用该数值的目的，是在离帧指针1字节的偏移量(-128~+127)内保存尽可能多的栈帧变量。</p>
+<p>不返回(Dose not return)：函数不返回到它的调用方。如果调用这样的函数，在相关的调用指令之后，IDA认为函数不会继续执行</p>
+<p>远函数(Far function)：在分段体系结构上将函数标记为远函数。在调用该函数时，函数调用方需要指定一个段和偏移值。通常，是否使用远调用，应该由程序中使用的内存模式决定，而不是由体系结构支持分段(x86体系结构上使用了大内存模式(相对于平内存模式))决定</p>
+<p>库函数(Library func)：将函数标记为库代码。</p>
+<p>静态函数(Static func)：仅标记函数为静态函数</p>
+<p>基于BP的帧(BP Based frame)：BP指代EBP。暂时不同能够理解书中的描述</p>
+<p>BP等于SP：一些函数将帧指针配置为在进入应该函数时指向栈帧的顶端，该情况将被标记该数值。基本上，它的作用等同于将帧指针增量大小设置为等于局部变量区域</p>
+<p><strong>Array数组功能：</strong></p>
+<p>数组元素宽度(Array element size)：指定各元素的大小，单位为字节</p>
+<p>最大可能大小(Maximal possible size)：指定最大数组长度</p>
+<p>数组大小(Array Size)：早期版本也称为Number of element</p>
+<p>行中的项目(Item on a line)：单行显示的元素数量</p>
+<p>元素宽度(Element width)：控制显示时的字距</p>
+<p>使用重复结构(Use “dup” construct)：该选项会将相同的数值合并，用重复说明符组合成一项</p>
+<p>有符号元素(Signed element)：将数据显示为有符号或无符号</p>
+<p>显示索引(Display indexes)：如名的功能。索引将以注释的形式附加在每行的末尾，若单行有多个元素，则只会显示尾元素的索引</p>
+<p>基本操作：</p>
+<p>热键C：可用于将未定义的字符串反编译为代码</p>
+<p>热键D：将代码转换为数据(可类似字符串)，也可用于修改一定义数据的类型</p>
+<p>热键G：跳转至目标地址</p>
+<p>热键U：取消当前定义(当IDA错误的将某些数据视作了函数，使用该方法可以修正这种错误)</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2021/04/18/reddream/">← Next 红羊幻梦——随笔杂记</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2021/03/18/linux%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">Linux学习笔记 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
