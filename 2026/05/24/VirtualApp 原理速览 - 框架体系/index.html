@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en" theme-mode="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>VirtualApp 原理速览 - 框架体系 | TokameinE - 雨声淅淅沥沥，犬吠永不止息</title><link rel="icon" type="image/x-icon" href="/favicon.ico"><script>var config = {"root":"/","search":{"preload":false,"activeHolder":"Enter here","blurHolder":"Search","noResult":"Data \"$0\" not found"},"code":{"codeInfo":"$0 - $1 lines","copy":"code.copy","copyFinish":"code.copyFinish","expand":"code.expand"}}</script><script src="//unpkg.com/mermaid@9.2.2/dist/mermaid.min.js"></script><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lightgallery.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-zoom.css"><link type="text/css" rel="stylesheet" href="//unpkg.com/lightgallery@2.7.1/css/lg-thumbnail.css"><link type="text/css" rel="stylesheet" href="/lib/fontawesome/css/all.min.css"><link rel="stylesheet" href="/css/arknights.css"><script>if (window.localStorage.getItem('theme-mode') === 'light')
+ document.documentElement.setAttribute('theme-mode', 'light')
+if (window.localStorage.getItem('theme-mode') === 'dark')
+ document.documentElement.setAttribute('theme-mode', 'dark')</script><style>@font-face {
+ font-family: Bender;
+ src: local('Bender'), url("/font/Bender.ttf"), url("/font/Bender.otf");
+}
+@font-face {
+ font-family: BenderLight;
+ src: local('BenderLight'), url("/font/BenderLight.ttf");
+}
+@font-face {
+ font-family: 'JetBrains Mono';
+ src: local('JetBrains Mono'), url('/font/JetBrainsMono-Regular.woff2') format('woff2');
+}</style><style>:root {
+  --dark-background: url('/img/bg.jpg');
+  --light-background: url('/img/91110244_p0.jpg');
+}</style><meta name="generator" content="Hexo 6.3.0"></head><body><div class="loading" style="opacity: 0;"><div class="loadingBar left"></div><div class="loadingBar right"></div></div><main><header class="closed"><div class="navBtn"><i class="navBtnIcon"><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span><span class="navBtnIconBar"></span></i></div><nav><div class="navItem" id="search-header"><span class="navItemTitle"><input autocomplete="off" autocorrect="off" autocapitalize="none" placeholder="Search" spellcheck="false" maxlength="50" type="text" id="search-input"></span></div><div class="navItem" id="search-holder"></div><div class="search-popup"><div id="search-result"></div></div><ol class="navContent"><li class="navItem"><a class="navBlock" href="/"><span class="navItemTitle">Home</span></a></li><li class="navItem" matchdata="categories,tags"><a class="navBlock" href="/archives/"><span class="navItemTitle">Archives</span></a></li><li class="navItem"><a class="navBlock" href="/about/"><span class="navItemTitle">About</span></a></li><li class="navItem"><a class="navBlock" href="/links/"><span class="navItemTitle">Links</span></a></li></ol></nav></header><article><div id="post-bg"><div id="post-title"><h1>VirtualApp 原理速览 - 框架体系</h1><div id="post-info"><span>First Post: <div class="control"><time datetime="2026-05-23T17:41:16.000Z" id="date"> 2026-05-24</time></div></span><br><span>Last Update: <div class="control"><time datetime="2025-05-24T03:29:34.419Z" id="updated"> 2025-05-24</time></div></span></div></div><hr><div id="post-content"><p class='item-img' data-src='/images/virtualappquickreview/%E6%A1%86%E6%9E%B6%E4%BD%93%E7%B3%BB/VirtualAppQuickReview.png'><img src="/images/virtualappquickreview/%E6%A1%86%E6%9E%B6%E4%BD%93%E7%B3%BB/VirtualAppQuickReview.png"></p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>从很早以前就一直很好奇 VirtualApp 的相关技术，但是一直抽不出时间。正巧最近想试着自己照猫画虎开发一个类似的容器化应用，并做一些定制化的需求，因此抽空把整个项目过了一遍，也正好帮我整理一遍过去一直对整个 Android 系统较为模糊的认知。</p>
+<h1 id="速览规划"><a href="#速览规划" class="headerlink" title="速览规划"></a>速览规划</h1><p>以下是本系列的速览规划：</p>
+<ol start="0">
+<li>VirtualApp 原理速览 - 框架体系概述</li>
+<li>Activity 启动流程 - 我想我们需要先清楚正常的应用是如何启动的</li>
+<li>容器内 APP 启动流程 - 四大组件 Activity 是如何实现的</li>
+<li>容器内 Service 启动流程 - 四大组件 Service 是如何实现的</li>
+<li>Broadcast Receiver 容器内实现 - 四大组件 Broadcast Receiver 是如何实现的</li>
+<li>Content Provider 容器内实现 - 四大组件 Content Provider 是如何实现的</li>
+<li>路径重定向和 Xposed 注入时机分析 - 容器内应用的数据访问如何正常进行以及 Xposed 是如何被注入的</li>
+</ol>
+<h1 id="技术框架"><a href="#技术框架" class="headerlink" title="技术框架"></a>技术框架</h1><p class='item-img' data-src='/images/virtualappquickreview/%E6%A1%86%E6%9E%B6%E4%BD%93%E7%B3%BB/vafram.png'><img src="/images/virtualappquickreview/%E6%A1%86%E6%9E%B6%E4%BD%93%E7%B3%BB/vafram.png"></p>
+<p>VA 框架对应用的操作涉及三个层面：</p>
+<ul>
+<li>Java </li>
+<li>Framework</li>
+<li>Native<br>技术只在应用层进行，因此无需 root 。一言蔽之，<strong>欺骗系统</strong>让系统以为应用已安装，同时也<strong>欺骗应用</strong>，让应用以为自己被安装。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>主要工作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>VA Space</td>
+<td>由VA提供了一个内部的空间，用于安装要在其内部运行的APP，这个空间是系统隔离的。</td>
+</tr>
+<tr>
+<td>VA Framework</td>
+<td>这一层主要给Android Framework和VAPP做代理，这也是VA的核心。VA提供了一套自己的VA Framework，处于<strong>Android Framework与VA APP之间</strong>。  <br>1. 对于VAPP，其访问的<strong>所有系统Service</strong>均已被 <code>VA Framework</code> 代理，它会修改VAPP的请求参数，将其中与VAPP安装信息相关的全部参数<strong>修改为宿主的参数</strong>之后发送给Android Framework（有部分请求会发送给自己的VA Server直接处理而不再发送给Android系统）。这样Android Framework收到VAPP请求后检查参数就会认为没有问题。  <br>2. 待Android系统对该请求处理完成返回结果时，VA Framework同样也会拦截住该返回结果，此时再将原来修改过的参数全部还原为VAPP请求时发送的。  <br>这样VAPP与Android系统的交互也就能跑通了。</td>
+</tr>
+<tr>
+<td>VA Native</td>
+<td>在这一层主要为了完成2个工作，<strong>IO重定向</strong>和VA APP与Android系统交互的<strong>请求修改</strong>。  <br>1. IO重定向是因为可能有部分APP会通过写死的绝对<strong>路径访问</strong>，但是如果APP没有安装到系统，这个路径是不存在的，通过IO重定向，则将其转向VA内部安装的路径。  <br>2. 另外有部分jni函数在<strong>VA Framework中无法hook的</strong>，所以需要在native层来做hook。</td>
+</tr>
+</tbody></table>
+<h1 id="代码框架"><a href="#代码框架" class="headerlink" title="代码框架"></a>代码框架</h1><blockquote>
+<p>考虑到现有开源的 VirtualApp 只支持老版本 Android，因此选择原理相同的 blackbox 进行参考<br>仓库地址：<a target="_blank" rel="noopener" href="https://github.com/Monster-GM/sandbox">https://github.com/Monster-GM/sandbox</a></p>
+</blockquote>
+<p>项目代码分为两个模块：</p>
+<ul>
+<li>app模块：用户操作与UI模块</li>
+<li>Bcore模块：此模块为秘盒空间的核心模块，负责完成整个应用的调度<ul>
+<li>src&#x2F;main：VirtualApp框架代码</li>
+<li>pine：Hook框架</li>
+<li>其他</li>
+</ul>
+</li>
+</ul>
+<p>本系列文章会主要关心其中的 VirtualApp 框架实现部分。</p>
+<div id="paginator"></div></div><div id="post-footer"><div id="pages"><div class="footer-link" style="width: 50%;text-align:right;border-right:1px #fe2 solid"><a href="/2026/05/24/VirtualApp%E5%8E%9F%E7%90%86%E9%80%9F%E8%A7%88%20-%20Activity%20%E5%8E%9F%E7%94%9F%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B/">← Next VirtualApp原理速览 - Activity 原生启动流程</a></div><div class="footer-link" style="width: 50%;right:1px;border-left:1px #fe2 solid"><a href="/2025/04/17/%E6%81%B0%E9%80%A2%E5%91%A8%E5%9B%9B%EF%BC%8C%E6%88%91%E5%BF%83%E9%87%8C%E6%83%B3%E7%9D%80%E8%82%AF%E5%BE%B7%E5%9F%BA%EF%BC%8C%E8%B7%AF%E8%BF%87%E4%BA%86%E9%BA%A6%E5%BD%93%E5%8A%B3%EF%BC%8C%E5%8D%B4%E8%BF%98%E6%98%AF%E7%82%B9%E4%BA%86%E6%8B%BC%E5%A5%BD%E9%A5%AD%E9%87%8C%E7%9A%84%E5%8D%8E%E8%8E%B1%E5%A3%AB%E3%80%82%E5%91%BC%E5%90%B8%E4%B8%80%E5%A6%82%E9%95%A3%E9%93%90%EF%BC%8C%E5%80%A6%E6%80%A0%E8%AF%B1%E5%8F%91%E8%99%9A%E6%97%A0%EF%BC%8C%E4%B8%80%E5%88%87%E7%9A%86%E6%98%AF%E8%99%9A%E5%A6%84%EF%BC%8C%E4%B8%87%E4%BA%8B%E7%9A%86%E4%B8%BA%E5%BE%92%E5%8A%B3%E3%80%82/">恰逢周四，我心里想着肯德基，路过了麦当劳，却还是点了拼好饭里的华莱士。呼吸一如镣铐，倦怠诱发虚无，一切皆是虚妄，万事皆为徒劳。 Prev →</a></div></div></div></div><div class="bottom-btn"><div><a class="i-top" id="to-top" onClick="scrolls.scrolltop();" title="To Top" style="opacity: 0; display: none;">∧ </a><a class="i-index" id="to-index" href="#toc-div" title="To Catalog">≡</a><a class="i-color" id="color-mode" onClick="colorMode.change()" title="Change Theme"></a></div></div></article><aside><div id="about"><a href="/" id="logo"><img src="/img/faction/6.png" alt="Logo"></a><h1 id="Dr"><a href="TokameinE">TokameinE</a></h1><div id="description"><p></p></div><div id="social-links"><a class="social" target="_blank" rel="noopener" href="https://github.com/ErodedElk"><i class="fab fa-github" alt="GitHub"></i></a><a class="social" target="_blank" rel="noopener" href="https://space.bilibili.com/1782544616"><i class="fa-brands fa-bilibili" alt="BiliBili"></i></a></div></div><div id="aside-block"><div id="toc-div"><h1>Catalog</h1><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%80%9F%E8%A7%88%E8%A7%84%E5%88%92"><span class="toc-number">2.</span> <span class="toc-text">速览规划</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A1%86%E6%9E%B6"><span class="toc-number">3.</span> <span class="toc-text">技术框架</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6"><span class="toc-number">4.</span> <span class="toc-text">代码框架</span></a></li></ol></div></div><footer><nobr>Published with <a target="_blank" rel="noopener" href="http://hexo.io">Hexo</a></nobr><wbr><nobr> Theme <a target="_blank" rel="noopener" href="https://github.com/Yue-plus/hexo-theme-arknights">Arknights</a></nobr><wbr><nobr> by <a target="_blank" rel="noopener" href="https://github.com/Yue-plus">Yue_plus</a></nobr></footer></aside></main><canvas id="canvas-dust"></canvas><script src="/js/search.js"></script><script src="/js/arknights.js"></script><script src="//unpkg.com/lightgallery@2.7.1/lightgallery.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/zoom/lg-zoom.min.js"></script><script src="//unpkg.com/lightgallery@2.7.1/plugins/thumbnail/lg-thumbnail.min.js"></script><script src="/js/pjax.js"></script><script class="pjax-js">reset= () => {document.querySelector('.lg-container')?.remove()
+lightGallery(document.getElementById('post-bg'), {
+  plugins: [lgZoom,lgThumbnail],
+  selector: '.item-img'})}</script><script>window.addEventListener("load",() => {pjax = new Pjax({
+ cacheBust: false,
+ selectors: ['title','article','#aside-block','.pjax-js'],
+ switches: {'article': Pjax.switches.sideBySide},
+ switchesOptions: {
+   'article': {
+     classNames: {
+       remove: "pjax-out",
+       add: "pjax-in"
+     }
+   }
+ }
+});
+document.addEventListener("pjax:complete", reset);reset()})</script></body></html>
